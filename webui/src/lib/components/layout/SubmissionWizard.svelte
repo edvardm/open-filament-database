@@ -147,13 +147,15 @@
 
 				{#if $isSpAuthenticated}
 					<div class="mb-4 flex items-center gap-3">
-						{#if $currentSpUser?.avatar_url}
-							<img src={$currentSpUser.avatar_url} alt={$currentSpUser.name} class="h-8 w-8 rounded-full" />
-						{:else}
-							<div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-bold">
-								{$currentSpUser?.name?.charAt(0)?.toUpperCase() || '?'}
-							</div>
-						{/if}
+						<img
+							src={$currentSpUser?.avatar_url}
+							alt=""
+							class="h-8 w-8 shrink-0 rounded-full bg-primary/10"
+							onerror={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex'; }}
+						/>
+						<div class="hidden h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-bold">
+							{$currentSpUser?.name?.charAt(0)?.toUpperCase() || '?'}
+						</div>
 						<div class="flex-1">
 							<p class="text-sm font-medium">{$currentSpUser?.name}</p>
 							{#if $currentSpUser?.company_name}
