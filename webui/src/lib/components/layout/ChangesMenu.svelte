@@ -53,14 +53,25 @@
 		if (savedMethod) {
 			localStorage.removeItem('ofd_reopen_wizard');
 			const params = new URLSearchParams(window.location.search);
-			if (params.has('auth_success') || params.has('sp_auth_success')) {
+			const hasSuccess = params.has('auth_success') || params.has('sp_auth_success');
+			const authError = params.get('sp_auth_error') || params.get('auth_error');
+
+			if (hasSuccess || authError) {
 				// Clean up the query params
 				params.delete('auth_success');
 				params.delete('sp_auth_success');
+				params.delete('sp_auth_error');
+				params.delete('auth_error');
 				const newUrl = params.toString()
 					? `${window.location.pathname}?${params}`
 					: window.location.pathname;
 				history.replaceState({}, '', newUrl);
+
+				if (authError) {
+					console.error('OAuth error:', authError);
+					alert(`Authentication failed: ${authError}. Check the server logs for details.`);
+					return;
+				}
 
 				// Wait for auth status to be fetched before opening wizard
 				await authStore.checkStatus();

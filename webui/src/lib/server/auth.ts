@@ -115,12 +115,15 @@ export async function exchangeSimplyPrintCode(
 	});
 
 	if (!response.ok) {
+		const body = await response.text();
+		console.error('[SP OAuth] Token endpoint error:', response.status, body);
 		throw new Error('SimplyPrint OAuth request failed: ' + response.status);
 	}
 
 	const data = await response.json();
 
 	if (data.error) {
+		console.error('[SP OAuth] Token endpoint returned error:', data);
 		throw new Error(`SimplyPrint OAuth error: ${data.error_description || data.error}`);
 	}
 
