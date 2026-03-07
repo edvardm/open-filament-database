@@ -10,6 +10,11 @@ export const API_BASE = env.PUBLIC_API_BASE_URL
 		: env.PUBLIC_API_BASE_URL
 	: 'https://api.openfilamentdatabase.org';
 
+/** Normalize a path segment: hyphens → underscores */
+function norm(segment: string): string {
+	return segment.replace(/-/g, '_');
+}
+
 /**
  * Build the dataset API URL from a local API path.
  * Maps local paths like /api/brands to cloud paths like /api/v1/brands/index.json
@@ -19,7 +24,7 @@ function buildCloudUrl(localPath: string): string {
 	if (localPath.startsWith('/api/stores')) {
 		const match = localPath.match(/^\/api\/stores\/([^/]+)$/);
 		if (match) {
-			return `${API_BASE}/api/v1/stores/${match[1]}.json`;
+			return `${API_BASE}/api/v1/stores/${norm(match[1])}.json`;
 		}
 		if (localPath === '/api/stores') {
 			return `${API_BASE}/api/v1/stores/index.json`;
@@ -34,7 +39,7 @@ function buildCloudUrl(localPath: string): string {
 
 		const match = localPath.match(/^\/api\/brands\/([^/]+)(?:\/(.+))?$/);
 		if (match) {
-			const brandId = match[1];
+			const brandId = norm(match[1]);
 			const subPath = match[2];
 
 			if (!subPath) {
@@ -50,11 +55,11 @@ function buildCloudUrl(localPath: string): string {
 				/^materials\/([^/]+)(?:\/filaments(?:\/([^/]+)(?:\/variants(?:\/([^/]+))?)?)?)?$/
 			);
 			if (materialMatch) {
-				const materialType = materialMatch[1];
-				const filamentName = materialMatch[2];
-				const variantId = materialMatch[3];
+				const materialType = norm(materialMatch[1]).toUpperCase();
+				const filamentName = materialMatch[2] ? norm(materialMatch[2]) : undefined;
+				const variantId = materialMatch[3] ? norm(materialMatch[3]) : undefined;
 
-				if (variantId) {
+				if (variantId && filamentName) {
 					return `${API_BASE}/api/v1/brands/${brandId}/materials/${materialType}/filaments/${filamentName}/variants/${variantId}.json`;
 				} else if (filamentName) {
 					return `${API_BASE}/api/v1/brands/${brandId}/materials/${materialType}/filaments/${filamentName}/index.json`;

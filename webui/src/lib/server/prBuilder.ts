@@ -27,8 +27,8 @@ export function entityPathToRepoPath(entityPath: string): string | null {
 	}
 
 	if (parts[0] === 'stores' && parts.length === 2) {
-		// Store IDs: hyphens removed in repo dirs
-		const storeDir = parts[1].replace(/-/g, '');
+		// Store IDs: hyphens → underscores in repo dirs
+		const storeDir = parts[1].replace(/-/g, '_');
 		return `stores/${storeDir}/store.json`;
 	}
 

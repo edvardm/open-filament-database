@@ -67,14 +67,34 @@ describe('saveUtils', () => {
 			expect(result).toBe(path.join(DATA_DIR, 'prusament', 'PLA', 'material.json'));
 		});
 
-		it('should map filament paths correctly', () => {
+		it('should map filament paths correctly and normalize hyphens', () => {
 			const result = entityPathToFsPath('brands/prusament/materials/PLA/filaments/galaxy-black');
-			expect(result).toBe(path.join(DATA_DIR, 'prusament', 'PLA', 'galaxy-black', 'filament.json'));
+			expect(result).toBe(path.join(DATA_DIR, 'prusament', 'PLA', 'galaxy_black', 'filament.json'));
 		});
 
-		it('should map variant paths correctly', () => {
+		it('should map variant paths correctly and normalize hyphens', () => {
 			const result = entityPathToFsPath('brands/prusament/materials/PLA/filaments/galaxy-black/variants/1kg');
-			expect(result).toBe(path.join(DATA_DIR, 'prusament', 'PLA', 'galaxy-black', '1kg', 'variant.json'));
+			expect(result).toBe(path.join(DATA_DIR, 'prusament', 'PLA', 'galaxy_black', '1kg', 'variant.json'));
+		});
+
+		it('should normalize brand hyphens to underscores', () => {
+			const result = entityPathToFsPath('brands/bambu-lab');
+			expect(result).toBe(path.join(DATA_DIR, 'bambu_lab', 'brand.json'));
+		});
+
+		it('should normalize store hyphens to underscores', () => {
+			const result = entityPathToFsPath('stores/clas-ohlson');
+			expect(result).toBe(path.join(STORES_DIR, 'clas_ohlson', 'store.json'));
+		});
+
+		it('should uppercase material type segments', () => {
+			const result = entityPathToFsPath('brands/prusament/materials/pla');
+			expect(result).toBe(path.join(DATA_DIR, 'prusament', 'PLA', 'material.json'));
+		});
+
+		it('should leave already-underscored paths unchanged', () => {
+			const result = entityPathToFsPath('brands/bambu_lab');
+			expect(result).toBe(path.join(DATA_DIR, 'bambu_lab', 'brand.json'));
 		});
 
 		it('should return null for unrecognized patterns', () => {

@@ -166,7 +166,7 @@ function validateFolderNaming(
 	// Convert path segment to repo-format id for comparison (slug→id conversion)
 	let expectedId = pathSegment;
 	if (entityType === 'store') {
-		expectedId = pathSegment.replace(/-/g, '');
+		expectedId = pathSegment.replace(/-/g, '_');
 	} else if (entityType === 'brand') {
 		expectedId = pathSegment.replace(/-/g, '_');
 	}

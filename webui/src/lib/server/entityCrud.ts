@@ -11,6 +11,11 @@ import { IS_CLOUD, proxyGetToCloud } from './cloudProxy';
  * Resolve a cloud proxy path from a config's template and route params.
  * E.g., '/api/brands/:brandId/materials' with { brandId: 'foo' } → '/api/brands/foo/materials'
  */
+function normalizeParam(name: string, value: string): string {
+	if (name === 'materialType') return value.replace(/-/g, '_').toUpperCase();
+	return value.replace(/-/g, '_');
+}
+
 function resolveCloudPath(
 	template: string,
 	params: Record<string, string>,
@@ -20,10 +25,10 @@ function resolveCloudPath(
 		if (!params[name]) {
 			throw new Error(`Missing required route parameter: ${name}`);
 		}
-		return params[name];
+		return normalizeParam(name, params[name]);
 	});
 	if (idParam && params[idParam]) {
-		result += `/${params[idParam]}`;
+		result += `/${normalizeParam(idParam, params[idParam])}`;
 	}
 	return result;
 }

@@ -76,7 +76,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			}
 			console.log(`[Webhook] Sending changes_requested email to ${crEmail} for PR #${pr.number}`);
 			sendChangesRequestedEmail(crEmail, pr.number, pr.html_url || pr._links?.html?.href || '', review.body || undefined)
-				.catch((err: any) => console.warn('Failed to send changes_requested email:', err.message));
+				.catch((err: any) => console.error('[Webhook] Failed to send changes_requested email:', err));
 		}).catch((err: any) => console.warn('Failed to look up email:', err.message));
 
 		return json({ ok: true, uuid, event: 'changes_requested' });
@@ -127,7 +127,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		console.log(`[Webhook] Sending ${webhookEvent} email to ${email} for PR #${pr.number}`);
 		const sendFn = isMerged ? sendMergedEmail : sendClosedEmail;
 		sendFn(email, pr.number, prUrl)
-			.catch((err: any) => console.warn(`Failed to send ${webhookEvent} email:`, err.message));
+			.catch((err: any) => console.error(`[Webhook] Failed to send ${webhookEvent} email:`, err));
 	}).catch((err: any) => console.warn('Failed to look up email:', err.message));
 
 	// 9. Clean up the head branch (best-effort, fire-and-forget)

@@ -110,7 +110,7 @@ export async function normalizeStoreId(baseDir: string, storeId: string): Promis
 		await fs.access(path.join(baseDir, safeId));
 		return safeId;
 	} catch {
-		const normalized = safeId.replace(/-/g, '');
+		const normalized = safeId.replace(/-/g, '_');
 		await fs.access(path.join(baseDir, normalized));
 		return normalized;
 	}

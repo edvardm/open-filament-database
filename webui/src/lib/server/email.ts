@@ -33,13 +33,19 @@ async function sendEmail(to: string, subject: string, textBody: string, htmlBody
 	const from = getFrom();
 	console.log(`[Email] Sending to ${to}: ${subject}`);
 
-	await c.sendMail({
-		from: { address: from.address, name: from.name },
-		to: [{ email_address: { address: to } }],
-		subject,
-		textbody: textBody,
-		htmlbody: htmlBody
-	});
+	try {
+		await c.sendMail({
+			from: { address: from.address, name: from.name },
+			to: [{ email_address: { address: to } }],
+			subject,
+			textbody: textBody,
+			htmlbody: htmlBody
+		});
+		console.log(`[Email] Sent successfully to ${to}`);
+	} catch (err: any) {
+		console.error('[Email] ZeptoMail send failed:', JSON.stringify(err, null, 2));
+		throw err;
+	}
 }
 
 export async function sendMergedEmail(to: string, prNumber: number, prUrl: string): Promise<void> {
