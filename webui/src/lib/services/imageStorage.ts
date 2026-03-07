@@ -3,8 +3,8 @@ import { useChangeTracking } from '$lib/stores/environment';
 import { changeStore } from '$lib/stores/changes';
 
 /**
- * Service for handling image storage in cloud mode
- * Images are stored as base64 in localStorage with references in the change tracking system
+ * Service for handling image storage in cloud mode.
+ * Images are stored in IndexedDB via the change tracking system.
  */
 export class ImageStorageService {
 	private static instance: ImageStorageService;
@@ -66,8 +66,8 @@ export class ImageStorageService {
 		// Generate unique ID
 		const imageId = this.generateImageId(entityPath, property);
 
-		// Store in change tracking system
-		changeStore.storeImage(imageId, entityPath, property, file.name, file.type, base64Data);
+		// Store in change tracking system (now async — writes to IndexedDB)
+		await changeStore.storeImage(imageId, entityPath, property, file.name, file.type, base64Data);
 
 		return imageId;
 	}
@@ -77,8 +77,8 @@ export class ImageStorageService {
 	 * @param imageId - The image ID
 	 * @returns Base64-encoded image data with data URL prefix
 	 */
-	getImage(imageId: string): string | null {
-		const base64 = changeStore.getImage(imageId);
+	async getImage(imageId: string): Promise<string | null> {
+		const base64 = await changeStore.getImage(imageId);
 
 		if (!base64) return null;
 
@@ -103,12 +103,12 @@ export class ImageStorageService {
 	 * @param filename - Original filename
 	 * @returns The image ID
 	 */
-	storeImageFromDataUrl(
+	async storeImageFromDataUrl(
 		entityPath: string,
 		property: string,
 		dataUrl: string,
 		filename: string = 'image.png'
-	): string {
+	): Promise<string> {
 		if (!get(useChangeTracking)) {
 			throw new Error('Image storage is only available in cloud mode');
 		}
@@ -133,8 +133,8 @@ export class ImageStorageService {
 		// Generate unique ID
 		const imageId = this.generateImageId(entityPath, property);
 
-		// Store in change tracking system
-		changeStore.storeImage(imageId, entityPath, property, filename, mimeType, base64Data);
+		// Store in change tracking system (now async — writes to IndexedDB)
+		await changeStore.storeImage(imageId, entityPath, property, filename, mimeType, base64Data);
 
 		return imageId;
 	}
@@ -144,8 +144,8 @@ export class ImageStorageService {
 	 * @param imageId - The image ID
 	 * @returns Blob URL or null if image not found
 	 */
-	createBlobUrl(imageId: string): string | null {
-		const dataUrl = this.getImage(imageId);
+	async createBlobUrl(imageId: string): Promise<string | null> {
+		const dataUrl = await this.getImage(imageId);
 
 		if (!dataUrl) return null;
 
@@ -208,14 +208,14 @@ export class ImageStorageService {
 	/**
 	 * Get storage statistics
 	 */
-	getStorageStats(): { count: number; estimatedSize: number } {
+	async getStorageStats(): Promise<{ count: number; estimatedSize: number }> {
 		const changeSet = get(changeStore);
 		const imageRefs = Object.values(changeSet.images);
 
 		let estimatedSize = 0;
 
 		for (const ref of imageRefs) {
-			const data = changeStore.getImage(ref.id);
+			const data = await changeStore.getImage(ref.id);
 			if (data) {
 				// Base64 encoding increases size by ~33%
 				// Estimate original size by removing base64 overhead

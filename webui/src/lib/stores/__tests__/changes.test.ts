@@ -31,6 +31,17 @@ vi.mock('$lib/stores/environment', () => ({
 	useChangeTracking: mocks.mockUseChangeTracking
 }));
 
+// Mock IndexedDB-backed image storage
+const imageDbStore: Record<string, string> = {};
+vi.mock('$lib/services/imageDb', () => ({
+	setImage: vi.fn(async (key: string, data: string) => { imageDbStore[key] = data; }),
+	getImage: vi.fn(async (key: string) => imageDbStore[key] ?? null),
+	removeImage: vi.fn(async (key: string) => { delete imageDbStore[key]; }),
+	removeImages: vi.fn(async (keys: string[]) => { for (const k of keys) delete imageDbStore[k]; }),
+	clearAll: vi.fn(async () => { for (const k of Object.keys(imageDbStore)) delete imageDbStore[k]; }),
+	getAllKeys: vi.fn(async () => Object.keys(imageDbStore))
+}));
+
 // Mock localStorage
 const localStorageMock = (() => {
 	let store: Record<string, string> = {};
@@ -216,14 +227,15 @@ describe('Change Store', () => {
 	});
 
 	describe('storeImage', () => {
-		it('should store image data in separate localStorage key', () => {
-			changeStore.storeImage('img-1', 'brands/test', 'logo', 'logo.png', 'image/png', 'base64data');
+		it('should store image data in IndexedDB', async () => {
+			await changeStore.storeImage('img-1', 'brands/test', 'logo', 'logo.png', 'image/png', 'base64data');
 
-			expect(localStorageMock.setItem).toHaveBeenCalledWith('ofd_image_img-1', 'base64data');
+			const { setImage } = await import('$lib/services/imageDb');
+			expect(setImage).toHaveBeenCalledWith('ofd_image_img-1', 'base64data');
 		});
 
-		it('should add image reference to change set', () => {
-			changeStore.storeImage('img-1', 'brands/test', 'logo', 'logo.png', 'image/png', 'base64data');
+		it('should add image reference to change set', async () => {
+			await changeStore.storeImage('img-1', 'brands/test', 'logo', 'logo.png', 'image/png', 'base64data');
 
 			const state = get(changeStore);
 			expect(state.images['img-1']).toBeDefined();
@@ -233,17 +245,15 @@ describe('Change Store', () => {
 	});
 
 	describe('getImage', () => {
-		it('should retrieve image data', () => {
-			localStorageMock._setStore({ 'ofd_image_img-1': 'storedData' });
+		it('should retrieve image data', async () => {
+			await changeStore.storeImage('img-1', 'brands/test', 'logo', 'logo.png', 'image/png', 'storedData');
 
-			changeStore.storeImage('img-1', 'brands/test', 'logo', 'logo.png', 'image/png', 'storedData');
-
-			const result = changeStore.getImage('img-1');
+			const result = await changeStore.getImage('img-1');
 			expect(result).toBe('storedData');
 		});
 
-		it('should return null for non-existent image', () => {
-			const result = changeStore.getImage('non-existent');
+		it('should return null for non-existent image', async () => {
+			const result = await changeStore.getImage('non-existent');
 			expect(result).toBeNull();
 		});
 	});
@@ -284,12 +294,13 @@ describe('Change Store', () => {
 			expect(get(changeCount)).toBe(0);
 		});
 
-		it('should remove all image data', () => {
-			changeStore.storeImage('img-1', 'brands/test', 'logo', 'logo.png', 'image/png', 'data');
+		it('should remove all image data from IndexedDB', async () => {
+			await changeStore.storeImage('img-1', 'brands/test', 'logo', 'logo.png', 'image/png', 'data');
 
 			changeStore.clear();
 
-			expect(localStorageMock.removeItem).toHaveBeenCalledWith('ofd_image_img-1');
+			const { clearAll } = await import('$lib/services/imageDb');
+			expect(clearAll).toHaveBeenCalled();
 		});
 
 		it('should clear localStorage', () => {
@@ -303,29 +314,28 @@ describe('Change Store', () => {
 	});
 
 	describe('exportChanges', () => {
-		it('should include metadata', () => {
-			const result = changeStore.exportChanges();
+		it('should include metadata', async () => {
+			const result = await changeStore.exportChanges();
 
 			expect(result.metadata).toBeDefined();
 			expect(result.metadata.version).toBe('1.0.0');
 			expect(result.metadata.exportedAt).toBeDefined();
 		});
 
-		it('should include all changes', () => {
+		it('should include all changes', async () => {
 			const entity = { type: 'brand' as const, id: 'test', path: 'brands/test' };
 			changeStore.trackCreate(entity, { id: 'test', name: 'Test' });
 
-			const result = changeStore.exportChanges();
+			const result = await changeStore.exportChanges();
 
 			expect(result.changes.length).toBe(1);
 			expect(result.metadata.changeCount).toBe(1);
 		});
 
-		it('should embed image data', () => {
-			localStorageMock._setStore({ 'ofd_image_img-1': 'imageData' });
-			changeStore.storeImage('img-1', 'brands/test', 'logo', 'logo.png', 'image/png', 'imageData');
+		it('should embed image data', async () => {
+			await changeStore.storeImage('img-1', 'brands/test', 'logo', 'logo.png', 'image/png', 'imageData');
 
-			const result = changeStore.exportChanges();
+			const result = await changeStore.exportChanges();
 
 			expect(result.images['img-1']).toBeDefined();
 			expect(result.images['img-1'].data).toBe('imageData');
@@ -350,9 +360,9 @@ describe('Change Store', () => {
 			expect(summary.deletes).toBe(1);
 		});
 
-		it('should count images', () => {
-			changeStore.storeImage('img-1', 'brands/test', 'logo', 'logo.png', 'image/png', 'data');
-			changeStore.storeImage('img-2', 'brands/test2', 'logo', 'logo.png', 'image/png', 'data');
+		it('should count images', async () => {
+			await changeStore.storeImage('img-1', 'brands/test', 'logo', 'logo.png', 'image/png', 'data');
+			await changeStore.storeImage('img-2', 'brands/test2', 'logo', 'logo.png', 'image/png', 'data');
 
 			const summary = changeStore.getSummary();
 

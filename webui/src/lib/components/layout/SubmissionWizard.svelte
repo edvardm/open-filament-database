@@ -83,7 +83,7 @@
 			}
 
 			const data = await res.json();
-			changeStore.importChanges({
+			await changeStore.importChanges({
 				metadata: {
 					exportedAt: Date.now(),
 					version: '1.0.0',

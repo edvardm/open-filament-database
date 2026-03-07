@@ -117,10 +117,7 @@
 					<span class="text-sm font-medium">Browse</span>
 				</div>
 
-				<!-- Arrow -->
-				<svg xmlns="http://www.w3.org/2000/svg" class="hidden h-5 w-5 shrink-0 text-muted-foreground sm:block" viewBox="0 0 20 20" fill="currentColor">
-					<path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-				</svg>
+				<div class="h-6 w-px shrink-0 bg-border/50 sm:h-px sm:w-8"></div>
 
 				<!-- Step 2: Edit -->
 				<div class="flex flex-col items-center gap-1.5 px-4 py-2">
@@ -132,10 +129,7 @@
 					<span class="text-sm font-medium">Edit</span>
 				</div>
 
-				<!-- Arrow -->
-				<svg xmlns="http://www.w3.org/2000/svg" class="hidden h-5 w-5 shrink-0 text-muted-foreground sm:block" viewBox="0 0 20 20" fill="currentColor">
-					<path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-				</svg>
+				<div class="h-6 w-px shrink-0 bg-border/50 sm:h-px sm:w-8"></div>
 
 				<!-- Step 3: Submit -->
 				<div class="flex flex-col items-center gap-1.5 px-4 py-2">
@@ -147,10 +141,7 @@
 					<span class="text-sm font-medium">Submit</span>
 				</div>
 
-				<!-- Arrow -->
-				<svg xmlns="http://www.w3.org/2000/svg" class="hidden h-5 w-5 shrink-0 text-muted-foreground sm:block" viewBox="0 0 20 20" fill="currentColor">
-					<path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-				</svg>
+				<div class="h-6 w-px shrink-0 bg-border/50 sm:h-px sm:w-8"></div>
 
 				<!-- Step 4: Review -->
 				<div class="flex flex-col items-center gap-1.5 px-4 py-2">
@@ -162,10 +153,7 @@
 					<span class="text-sm font-medium">Review</span>
 				</div>
 
-				<!-- Arrow -->
-				<svg xmlns="http://www.w3.org/2000/svg" class="hidden h-5 w-5 shrink-0 text-muted-foreground sm:block" viewBox="0 0 20 20" fill="currentColor">
-					<path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-				</svg>
+				<div class="h-6 w-px shrink-0 bg-border/50 sm:h-px sm:w-8"></div>
 
 				<!-- Step 5: Live -->
 				<div class="flex flex-col items-center gap-1.5 px-4 py-2">

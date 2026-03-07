@@ -78,16 +78,25 @@
 			if (currentLogo.startsWith('data:')) {
 				previewUrl = currentLogo;
 			} else {
-				// Check localStorage for staged image changes (both modes)
+				// Check IndexedDB for staged image changes (both modes)
 				if ($useChangeTracking) {
-					const imageData = changeStore.getImage(currentLogo);
-					if (imageData) {
-						const imageRef = $changeStore.images[currentLogo];
-						if (imageRef) {
-							previewUrl = `data:${imageRef.mimeType};base64,${imageData}`;
-							return;
+					const logoId = currentLogo;
+					changeStore.getImage(logoId).then((imageData) => {
+						if (imageData) {
+							const imageRef = $changeStore.images[logoId];
+							if (imageRef) {
+								previewUrl = `data:${imageRef.mimeType};base64,${imageData}`;
+								return;
+							}
 						}
-					}
+						// Fall through to URL-based lookup
+						if ($isCloudMode) {
+							previewUrl = `${$apiBaseUrl}/api/${entityType}s/logo/${logoId}`;
+						} else {
+							previewUrl = `/api/${entityType}s/${entityId}/logo/${logoId}`;
+						}
+					});
+					return;
 				}
 
 				// URL format depends on the data source, not change tracking

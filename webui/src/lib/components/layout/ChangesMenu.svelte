@@ -128,7 +128,7 @@
 	}
 
 	async function exportChanges() {
-		const exportData = changeStore.exportChanges();
+		const exportData = await changeStore.exportChanges();
 		const json = JSON.stringify(exportData, null, 2);
 		const blob = new Blob([json], { type: 'application/json' });
 		const url = URL.createObjectURL(blob);
@@ -266,7 +266,7 @@
 			}
 
 			// Include pending changes so validation runs with them applied
-			const exportData = $hasChanges ? changeStore.exportChanges() : null;
+			const exportData = $hasChanges ? await changeStore.exportChanges() : null;
 			const body: Record<string, any> = { type: 'full' };
 			if (exportData && exportData.changes.length > 0) {
 				body.changes = exportData.changes;
@@ -309,7 +309,7 @@
 		saveResult = null;
 
 		try {
-			const exportData = changeStore.exportChanges();
+			const exportData = await changeStore.exportChanges();
 
 			const imagesWithPaths: Record<string, any> = {};
 			const cs = $changeStore;
@@ -351,7 +351,7 @@
 
 	// Wizard callbacks: return results instead of managing state directly
 	async function submitAnonymousForWizard(email?: string): Promise<{ success: boolean; message: string; uuid?: string; prUrl?: string }> {
-		const exportData = changeStore.exportChanges();
+		const exportData = await changeStore.exportChanges();
 
 		const imagesWithPaths: Record<string, any> = {};
 		const cs = $changeStore;
@@ -392,7 +392,7 @@
 	}
 
 	async function createPRForWizard(title: string, description: string): Promise<{ success: boolean; message: string; prUrl?: string }> {
-		const exportData = changeStore.exportChanges();
+		const exportData = await changeStore.exportChanges();
 
 		const imagesWithPaths: Record<string, any> = {};
 		const cs = $changeStore;

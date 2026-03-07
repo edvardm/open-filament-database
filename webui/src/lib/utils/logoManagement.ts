@@ -76,8 +76,8 @@ export async function saveLogoImage(
 		// Create a unique image ID
 		const imageId = `${type}_${entityId}_logo_${Date.now()}`;
 
-		// Store the image in the change store (written to disk on save)
-		changeStore.storeImage(imageId, entityPath, 'logo', filename, mimeType, base64Data);
+		// Store the image in the change store (writes to IndexedDB)
+		await changeStore.storeImage(imageId, entityPath, 'logo', filename, mimeType, base64Data);
 
 		// Return the image ID so it can be referenced
 		return imageId;

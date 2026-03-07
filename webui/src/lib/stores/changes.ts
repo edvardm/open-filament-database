@@ -26,6 +26,7 @@ import {
 	getDirectChildren
 } from '$lib/utils/changeTreeOps';
 import { useChangeTracking } from './environment';
+import * as imageDb from '$lib/services/imageDb';
 
 const STORAGE_KEY_CHANGES = 'ofd_pending_changes';
 const STORAGE_KEY_IMAGES_PREFIX = 'ofd_image_';
@@ -173,22 +174,28 @@ function createChangeStore() {
 	}
 
 	/**
-	 * Remove images associated with an entity path from localStorage and the changeSet
+	 * Remove images associated with an entity path from IndexedDB and the changeSet.
+	 * The IndexedDB deletions are fire-and-forget so this can be called inside
+	 * synchronous store update() callbacks.
 	 */
 	function cleanupImages(changeSet: TreeChangeSet, entityPath: string) {
 		if (!browser) return;
 
 		const imageIds = findImagesForEntity(changeSet.images, entityPath);
+		const keysToRemove: string[] = [];
+
 		for (const imageId of imageIds) {
 			const imageRef = changeSet.images[imageId];
 			if (imageRef) {
-				try {
-					localStorage.removeItem(imageRef.storageKey);
-				} catch (e) {
-					console.error('Failed to remove image during entity cleanup:', e);
-				}
+				keysToRemove.push(imageRef.storageKey);
 				delete changeSet.images[imageId];
 			}
+		}
+
+		if (keysToRemove.length > 0) {
+			imageDb.removeImages(keysToRemove).catch((e) => {
+				console.error('Failed to remove images during entity cleanup:', e);
+			});
 		}
 	}
 
@@ -316,9 +323,9 @@ function createChangeStore() {
 		},
 
 		/**
-		 * Store an image reference
+		 * Store an image reference (image data goes to IndexedDB)
 		 */
-		storeImage(
+		async storeImage(
 			imageId: string,
 			entityPath: string,
 			property: string,
@@ -330,14 +337,8 @@ function createChangeStore() {
 
 			const storageKey = `${STORAGE_KEY_IMAGES_PREFIX}${imageId}`;
 
-			// Store the image data separately
 			if (browser) {
-				try {
-					localStorage.setItem(storageKey, base64Data);
-				} catch (e) {
-					console.error('Failed to store image:', e);
-					throw new Error('Failed to store image. Storage quota may be exceeded.');
-				}
+				await imageDb.setImage(storageKey, base64Data);
 			}
 
 			update((changeSet) => {
@@ -356,9 +357,9 @@ function createChangeStore() {
 		},
 
 		/**
-		 * Get an image by ID
+		 * Get an image by ID (reads from IndexedDB)
 		 */
-		getImage(imageId: string): string | null {
+		async getImage(imageId: string): Promise<string | null> {
 			if (!browser) return null;
 
 			const changeSet = get({ subscribe });
@@ -367,7 +368,7 @@ function createChangeStore() {
 			if (!imageRef) return null;
 
 			try {
-				return localStorage.getItem(imageRef.storageKey);
+				return await imageDb.getImage(imageRef.storageKey);
 			} catch (e) {
 				console.error('Failed to retrieve image:', e);
 				return null;
@@ -431,15 +432,10 @@ function createChangeStore() {
 		clear() {
 			if (!browser) return;
 
-			// Clear all image data from localStorage
-			const changeSet = get({ subscribe });
-			for (const imageRef of Object.values(changeSet.images)) {
-				try {
-					localStorage.removeItem(imageRef.storageKey);
-				} catch (e) {
-					console.error('Failed to remove image:', e);
-				}
-			}
+			// Clear all image data from IndexedDB (fire-and-forget)
+			imageDb.clearAll().catch((e) => {
+				console.error('Failed to clear images from IndexedDB:', e);
+			});
 
 			// Clear the change set
 			set(createEmptyChangeSet());
@@ -447,25 +443,28 @@ function createChangeStore() {
 		},
 
 		/**
-		 * Export all changes as JSON
+		 * Export all changes as JSON (async — reads images from IndexedDB)
 		 */
-		exportChanges(): ChangeExport {
+		async exportChanges(): Promise<ChangeExport> {
 			const changeSet = get({ subscribe });
 			const changes = getAllChanges(changeSet.tree);
 
 			// Build image export with embedded base64 data
 			const images: ChangeExport['images'] = {};
 
-			for (const [imageId, imageRef] of Object.entries(changeSet.images)) {
-				const data = browser ? localStorage.getItem(imageRef.storageKey) : null;
-
-				if (data) {
-					images[imageId] = {
-						filename: imageRef.filename,
-						mimeType: imageRef.mimeType,
-						data
-					};
-				}
+			if (browser) {
+				await Promise.all(
+					Object.entries(changeSet.images).map(async ([imageId, imageRef]) => {
+						const data = await imageDb.getImage(imageRef.storageKey);
+						if (data) {
+							images[imageId] = {
+								filename: imageRef.filename,
+								mimeType: imageRef.mimeType,
+								data
+							};
+						}
+					})
+				);
 			}
 
 			return {
@@ -484,18 +483,11 @@ function createChangeStore() {
 		 * Import changes from a ChangeExport (e.g. deflated from a previous submission).
 		 * Replaces the current change set entirely.
 		 */
-		importChanges(exportData: ChangeExport) {
+		async importChanges(exportData: ChangeExport) {
 			if (!browser) return;
 
-			// Clear existing changes first
-			const currentSet = get({ subscribe });
-			for (const imageRef of Object.values(currentSet.images)) {
-				try {
-					localStorage.removeItem(imageRef.storageKey);
-				} catch {
-					// ignore
-				}
-			}
+			// Clear existing images from IndexedDB
+			await imageDb.clearAll().catch(() => {});
 
 			// Build a new change set from the imported data
 			const newChangeSet = createEmptyChangeSet();
@@ -506,36 +498,34 @@ function createChangeStore() {
 				treeSetChange(newChangeSet, ep, change);
 			}
 
-			// Store imported images
-			for (const [imageId, imageData] of Object.entries(exportData.images)) {
-				const storageKey = `${STORAGE_KEY_IMAGES_PREFIX}${imageId}`;
-				try {
-					localStorage.setItem(storageKey, imageData.data);
-				} catch (e) {
-					console.error('Failed to store imported image:', e);
-					continue;
-				}
+			// Store imported images into IndexedDB
+			await Promise.all(
+				Object.entries(exportData.images).map(async ([imageId, imageData]) => {
+					const storageKey = `${STORAGE_KEY_IMAGES_PREFIX}${imageId}`;
+					try {
+						await imageDb.setImage(storageKey, imageData.data);
+					} catch (e) {
+						console.error('Failed to store imported image:', e);
+						return;
+					}
 
-				// Reconstruct the image ref — entityPath and property come from
-				// the imageId convention (entityPath:property:filename), but we
-				// can also infer from the change data
-				newChangeSet.images[imageId] = {
-					id: imageId,
-					entityPath: '', // Will be filled from imageId if possible
-					property: '',
-					filename: imageData.filename,
-					mimeType: imageData.mimeType,
-					storageKey
-				};
+					newChangeSet.images[imageId] = {
+						id: imageId,
+						entityPath: '',
+						property: '',
+						filename: imageData.filename,
+						mimeType: imageData.mimeType,
+						storageKey
+					};
 
-				// Try to parse imageId to extract entityPath and property
-				// Convention: "entityPath:property:filename"
-				const parts = imageId.split(':');
-				if (parts.length >= 2) {
-					newChangeSet.images[imageId].entityPath = parts[0];
-					newChangeSet.images[imageId].property = parts[1];
-				}
-			}
+					// Try to parse imageId to extract entityPath and property
+					const parts = imageId.split(':');
+					if (parts.length >= 2) {
+						newChangeSet.images[imageId].entityPath = parts[0];
+						newChangeSet.images[imageId].property = parts[1];
+					}
+				})
+			);
 
 			newChangeSet.lastModified = Date.now();
 			set(newChangeSet);
