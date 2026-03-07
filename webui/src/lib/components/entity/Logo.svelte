@@ -2,6 +2,7 @@
 	import { browser } from '$app/environment';
 	import { useChangeTracking } from '$lib/stores/environment';
 	import { changeStore } from '$lib/stores/changes';
+	import * as imageDb from '$lib/services/imageDb';
 
 	interface Props {
 		src: string;
@@ -19,6 +20,9 @@
 		lg: 'h-24 w-24'
 	};
 
+	// Async-loaded data URL from IndexedDB for change-tracked images
+	let indexedDbUrl = $state<string>('');
+
 	// Build logo URL based on environment mode, supporting base64 data URLs
 	const logoUrl = $derived.by(() => {
 		if (!src || !browser) return ''; // Don't generate URL during SSR
@@ -28,43 +32,53 @@
 			return src;
 		}
 
-		// Check localStorage for staged image changes (both modes)
-		if ($useChangeTracking) {
-			// First, check if src is an image ID referencing stored base64 in change store
-			// Subscribe to changeStore to make this reactive
-			const imageRef = $changeStore.images[src];
-			if (imageRef) {
-				// Get the base64 data from localStorage
-				try {
-					const imageData = localStorage.getItem(imageRef.storageKey);
-					if (imageData) {
-						return `data:${imageRef.mimeType};base64,${imageData}`;
-					}
-				} catch (e) {
-					console.error('Failed to retrieve image from localStorage:', e);
-				}
-			}
-
-			// Also check if there's an image stored for this entity's logo property
-			// This handles the case where we need to look up by entity path
-			const entityPath = `${type}s/${id}`;
-			for (const [, imgRef] of Object.entries($changeStore.images)) {
-				if (imgRef.entityPath === entityPath && imgRef.property === 'logo') {
-					try {
-						const imageData = localStorage.getItem(imgRef.storageKey);
-						if (imageData) {
-							return `data:${imgRef.mimeType};base64,${imageData}`;
-						}
-					} catch (e) {
-						console.error('Failed to retrieve image from localStorage:', e);
-					}
-				}
-			}
+		// Use the async-loaded IndexedDB URL if available
+		if (indexedDbUrl) {
+			return indexedDbUrl;
 		}
 
 		// Always use the local endpoint — in cloud mode it proxies to the external API,
 		// keeping requests same-origin to avoid OpaqueResponseBlocking.
 		return `/api/${type}s/${id}/logo/${src}`;
+	});
+
+	// Asynchronously load image data from IndexedDB when change tracking has a matching image
+	$effect(() => {
+		if (!browser || !src || !$useChangeTracking || src.startsWith('data:')) {
+			indexedDbUrl = '';
+			return;
+		}
+
+		// Check if src is an image ID in the change store
+		const imageRef = $changeStore.images[src];
+		if (imageRef) {
+			imageDb.getImage(imageRef.storageKey).then((data) => {
+				if (data) {
+					indexedDbUrl = `data:${imageRef.mimeType};base64,${data}`;
+				}
+			}).catch((e) => {
+				console.error('Failed to retrieve image from IndexedDB:', e);
+			});
+			return;
+		}
+
+		// Also check by entity path for this entity's logo property
+		const entityPath = `${type}s/${id}`;
+		for (const [, imgRef] of Object.entries($changeStore.images)) {
+			if (imgRef.entityPath === entityPath && imgRef.property === 'logo') {
+				imageDb.getImage(imgRef.storageKey).then((data) => {
+					if (data) {
+						indexedDbUrl = `data:${imgRef.mimeType};base64,${data}`;
+					}
+				}).catch((e) => {
+					console.error('Failed to retrieve image from IndexedDB:', e);
+				});
+				return;
+			}
+		}
+
+		// No matching image in change store
+		indexedDbUrl = '';
 	});
 
 	// Handle image load errors (logo not available in cloud mode)
