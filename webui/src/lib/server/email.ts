@@ -14,7 +14,7 @@ function getClient(): any | null {
 		return null;
 	}
 
-	const url = privateEnv.ZEPTOMAIL_API_URL || 'api.zeptomail.com/';
+	const url = privateEnv.ZEPTOMAIL_API_URL || 'api.zeptomail.eu/';
 	client = new SendMailClient({ url, token: privateEnv.ZEPTOMAIL_TOKEN });
 	return client;
 }
