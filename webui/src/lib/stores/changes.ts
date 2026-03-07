@@ -548,6 +548,46 @@ function createChangeStore() {
 			};
 
 			return summary;
+		},
+
+		/**
+		 * Get a detailed breakdown of changes by entity type and operation.
+		 * Returns human-readable strings like "3 new brands", "2 modified filaments".
+		 */
+		getDetailedSummary(): string[] {
+			const changeSet = get({ subscribe });
+			const changes = getAllChanges(changeSet.tree);
+
+			const counts: Record<string, Record<string, number>> = {};
+			for (const c of changes) {
+				const type = c.entity.type;
+				if (!counts[type]) counts[type] = {};
+				counts[type][c.operation] = (counts[type][c.operation] || 0) + 1;
+			}
+
+			const plurals: Record<string, string> = {
+				store: 'stores',
+				brand: 'brands',
+				material: 'materials',
+				filament: 'filaments',
+				variant: 'variants'
+			};
+
+			const labels: Record<string, string> = {
+				create: 'new',
+				update: 'modified',
+				delete: 'deleted'
+			};
+
+			const parts: string[] = [];
+			for (const [type, ops] of Object.entries(counts)) {
+				for (const [op, count] of Object.entries(ops)) {
+					const noun = count === 1 ? type : (plurals[type] || `${type}s`);
+					parts.push(`${count} ${labels[op] || op} ${noun}`);
+				}
+			}
+
+			return parts;
 		}
 	};
 }

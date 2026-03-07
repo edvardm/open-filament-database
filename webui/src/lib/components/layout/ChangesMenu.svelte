@@ -625,43 +625,37 @@
 
 <!-- Submit Modal -->
 <Modal show={submitModalOpen} title={$isLocalMode ? 'Save Changes' : 'Submit Changes'} onClose={() => { submitModalOpen = false; cleanupValidationStream(); }} maxWidth="6xl" height="3/4">
-	{@const summary = changeStore.getSummary()}
+	{@const detailedSummary = changeStore.getDetailedSummary()}
 
 	<div class="h-full overflow-hidden">
 	<TwoColumnLayout leftWidth="1/2" leftSpacing="md">
 		{#snippet leftContent()}
-			<!-- Validation Section -->
-			<div class="flex min-h-0 flex-1 flex-col rounded-lg border bg-muted/30 p-4">
-				<div class="mb-2 flex shrink-0 items-center justify-between">
-					<h4 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Validation</h4>
-					<Button
-						onclick={() => startValidation()}
-						variant="ghost"
-						size="icon"
-						class="h-7 w-7"
-						title="Re-run validation"
-						disabled={validationStatus === 'running'}
-					>
-						<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 {validationStatus === 'running' ? 'animate-spin' : ''}" viewBox="0 0 20 20" fill="currentColor">
-							<path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
-						</svg>
-					</Button>
-				</div>
-
-				{#if validationStatus === 'idle'}
-					<p class="text-sm text-muted-foreground">Validation has not been run yet.</p>
-				{:else if validationStatus === 'running'}
-					<div class="flex items-center gap-2 text-sm text-muted-foreground">
-						<LoadingSpinner />
-						<span>{validationProgress || 'Running validation...'}</span>
+			<!-- Validation Section (only shown when running or has issues) -->
+			{#if validationStatus === 'running' || (validationStatus === 'complete' && !validationIsValid) || validationStatus === 'error'}
+				<div class="flex min-h-0 flex-1 flex-col rounded-lg border bg-muted/30 p-4">
+					<div class="mb-2 flex shrink-0 items-center justify-between">
+						<h4 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Validation</h4>
+						<Button
+							onclick={() => startValidation()}
+							variant="ghost"
+							size="icon"
+							class="h-7 w-7"
+							title="Re-run validation"
+							disabled={validationStatus === 'running'}
+						>
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 {validationStatus === 'running' ? 'animate-spin' : ''}" viewBox="0 0 20 20" fill="currentColor">
+								<path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+							</svg>
+						</Button>
 					</div>
-				{:else if validationStatus === 'complete'}
-					<div class="mb-2 flex shrink-0 items-center gap-2">
-						{#if validationIsValid}
-							<span class="rounded-full bg-green-500/10 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:text-green-400">
-								Valid
-							</span>
-						{:else}
+
+					{#if validationStatus === 'running'}
+						<div class="flex items-center gap-2 text-sm text-muted-foreground">
+							<LoadingSpinner />
+							<span>{validationProgress || 'Running validation...'}</span>
+						</div>
+					{:else if validationStatus === 'complete'}
+						<div class="mb-2 flex shrink-0 items-center gap-2">
 							{#if validationErrorCount > 0}
 								<span class="rounded-full bg-destructive/10 px-2.5 py-0.5 text-xs font-medium text-destructive">
 									{validationErrorCount} {validationErrorCount === 1 ? 'error' : 'errors'}
@@ -672,10 +666,8 @@
 									{validationWarningCount} {validationWarningCount === 1 ? 'warning' : 'warnings'}
 								</span>
 							{/if}
-						{/if}
-					</div>
+						</div>
 
-					{#if validationErrors.length > 0}
 						<div class="min-h-0 flex-1 space-y-1.5 overflow-y-auto">
 							{#each validationErrors as error}
 								<div class="rounded border px-2.5 py-1.5 text-xs {error.level === 'ERROR' ? 'border-destructive/30 bg-destructive/5 text-destructive' : 'border-yellow-500/30 bg-yellow-500/5 text-yellow-700 dark:text-yellow-400'}">
@@ -687,15 +679,13 @@
 								</div>
 							{/each}
 						</div>
-					{:else}
-						<p class="text-sm text-green-700 dark:text-green-400">No validation issues found.</p>
+					{:else if validationStatus === 'error'}
+						<div class="rounded-md bg-destructive/10 p-2.5 text-sm text-destructive">
+							{validationErrors[0]?.message || 'Validation failed'}
+						</div>
 					{/if}
-				{:else if validationStatus === 'error'}
-					<div class="rounded-md bg-destructive/10 p-2.5 text-sm text-destructive">
-						{validationErrors[0]?.message || 'Validation failed'}
-					</div>
-				{/if}
-			</div>
+				</div>
+			{/if}
 
 			<!-- Save/Submit Section -->
 			<div class="shrink-0">
@@ -767,7 +757,7 @@
 						<span class="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">Not validated</span>
 					{/if}
 					<span class="text-xs text-muted-foreground">
-						{summary.total} {summary.total === 1 ? 'change' : 'changes'} ({summary.creates} new, {summary.updates} modified{#if summary.deletes > 0}, {summary.deletes} deleted{/if})
+						{detailedSummary.join(', ')}
 					</span>
 				</div>
 				<Button onclick={exportChanges} variant="ghost" size="sm" class="shrink-0 text-muted-foreground">
