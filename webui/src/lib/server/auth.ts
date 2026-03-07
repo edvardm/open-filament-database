@@ -148,6 +148,16 @@ export async function getSimplyPrintUser(token: string): Promise<SimplyPrintUser
 	}
 
 	const data = await response.json();
-	console.log('[SP OAuth] TokenInfo response:', JSON.stringify(data));
-	return data;
+
+	if (!data.status || !data.user) {
+		throw new Error('SimplyPrint TokenInfo: invalid response');
+	}
+
+	return {
+		id: data.user.id,
+		name: data.user.name,
+		email: data.user.email,
+		company_id: data.company?.id,
+		company_name: data.company?.name
+	};
 }
