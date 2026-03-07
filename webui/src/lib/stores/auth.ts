@@ -15,6 +15,7 @@ interface SimplyPrintUser {
 	name: string;
 	email: string;
 	company_name: string;
+	avatar_url: string;
 }
 
 interface AuthState {

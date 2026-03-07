@@ -147,9 +147,13 @@
 
 				{#if $isSpAuthenticated}
 					<div class="mb-4 flex items-center gap-3">
-						<div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-bold">
-							{$currentSpUser?.name?.charAt(0)?.toUpperCase() || '?'}
-						</div>
+						{#if $currentSpUser?.avatar_url}
+							<img src={$currentSpUser.avatar_url} alt={$currentSpUser.name} class="h-8 w-8 rounded-full" />
+						{:else}
+							<div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-bold">
+								{$currentSpUser?.name?.charAt(0)?.toUpperCase() || '?'}
+							</div>
+						{/if}
 						<div class="flex-1">
 							<p class="text-sm font-medium">{$currentSpUser?.name}</p>
 							{#if $currentSpUser?.company_name}
