@@ -8,9 +8,10 @@
 	import { theme } from '$lib/stores/theme';
 	import { db } from '$lib/services/database';
 	import { page } from '$app/stores';
-	import { env } from '$env/dynamic/public';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
+	import { loadTraitConfig } from '$lib/config/traitConfig';
+	import { loadSlicerConfig } from '$lib/config/slicerConfig';
 
 	let { children } = $props();
 
@@ -21,6 +22,9 @@
 		if (get(isCloudMode)) {
 			authStore.checkStatus();
 		}
+		// Load schema-derived configs in parallel
+		loadTraitConfig();
+		loadSlicerConfig();
 	});
 
 	function handleRefresh() {
@@ -70,14 +74,12 @@
 					>
 						Stores
 					</a>
-					{#if env.PUBLIC_API_BASE_URL}
 					<a
-						href={env.PUBLIC_API_BASE_URL}
-						class="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+						href="/docs"
+						class="rounded-md px-3 py-2 text-sm font-medium transition-colors {$page.url.pathname.startsWith('/docs') ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
 					>
 						API
 					</a>
-					{/if}
 				</nav>
 			</div>
 			<!-- Right: Action buttons -->

@@ -3,6 +3,7 @@
 	import Tooltip from './Tooltip.svelte';
 	import { Button } from '$lib/components/ui';
 	import { LABEL_CLASSES, REQUIRED_INDICATOR } from '$lib/styles/formStyles';
+	import { COUNTRY_SEARCH_PLACEHOLDER } from '$lib/config/messages';
 
 	interface Props {
 		values: string[];
@@ -17,7 +18,7 @@
 		label = '',
 		required = false,
 		tooltip = '',
-		placeholder = 'Search country...'
+		placeholder = COUNTRY_SEARCH_PLACEHOLDER
 	}: Props = $props();
 
 	function addField() {

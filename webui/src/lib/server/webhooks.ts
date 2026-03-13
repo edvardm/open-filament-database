@@ -105,7 +105,12 @@ export async function sendWebhook(payload: WebhookPayload): Promise<void> {
  */
 export function verifyGitHubSignature(payload: string, signatureHeader: string | null): boolean {
 	const secret = privateEnv.GITHUB_WEBHOOK_SECRET;
-	if (!secret) return false;
+	if (!secret) {
+		if (process.env.NODE_ENV === 'production') {
+			throw new Error('GITHUB_WEBHOOK_SECRET is required in production');
+		}
+		return false;
+	}
 	if (!signatureHeader) return false;
 
 	const expected = `sha256=${crypto.createHmac('sha256', secret).update(payload).digest('hex')}`;

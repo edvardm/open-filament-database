@@ -1,5 +1,6 @@
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
+import { STORAGE_KEY_USER_PREFS } from '$lib/config/storageKeys';
 
 export interface SubmissionRecord {
 	uuid: string;
@@ -11,8 +12,6 @@ export interface SubmissionRecord {
 export interface UserPrefs {
 	submissionUuids: SubmissionRecord[];
 }
-
-const STORAGE_KEY = 'ofd_user_prefs';
 const MAX_SUBMISSIONS = 50;
 
 function loadPrefs(): UserPrefs {
@@ -23,7 +22,7 @@ function loadPrefs(): UserPrefs {
 	if (!browser) return defaults;
 
 	try {
-		const stored = localStorage.getItem(STORAGE_KEY);
+		const stored = localStorage.getItem(STORAGE_KEY_USER_PREFS);
 		if (stored) {
 			const parsed = JSON.parse(stored);
 			return { ...defaults, ...parsed };
@@ -38,7 +37,7 @@ function loadPrefs(): UserPrefs {
 function savePrefs(prefs: UserPrefs): void {
 	if (!browser) return;
 	try {
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
+		localStorage.setItem(STORAGE_KEY_USER_PREFS, JSON.stringify(prefs));
 	} catch {
 		// Storage full or unavailable
 	}

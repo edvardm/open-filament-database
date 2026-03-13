@@ -2,8 +2,7 @@ import { writeFile, readFile, mkdir, unlink } from 'fs/promises';
 import { join, basename, extname } from 'path';
 import { existsSync } from 'fs';
 import { validatePathSegment } from './pathValidation';
-
-const MAX_LOGO_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+import { MAX_IMAGE_SIZE_BYTES } from '$lib/config/imageConfig';
 
 export type EntityType = 'brand' | 'store';
 
@@ -31,7 +30,7 @@ export function getLogoDirectory(entityId: string, entityType: EntityType): stri
  * Parse a data URL and extract its components
  */
 export function parseImageDataUrl(imageData: string): { extension: string; base64Data: string } | null {
-	const matches = imageData.match(/^data:image\/(\w+);base64,(.+)$/);
+	const matches = imageData.match(/^data:image\/(png|jpe?g|svg\+xml|gif|webp);base64,(.+)$/);
 	if (!matches) {
 		return null;
 	}
@@ -62,8 +61,8 @@ export async function saveLogo(
 		const { extension, base64Data } = parsed;
 		const buffer = Buffer.from(base64Data, 'base64');
 
-		if (buffer.length > MAX_LOGO_SIZE_BYTES) {
-			return { success: false, error: `Logo exceeds ${MAX_LOGO_SIZE_BYTES / 1024 / 1024}MB size limit` };
+		if (buffer.length > MAX_IMAGE_SIZE_BYTES) {
+			return { success: false, error: `Logo exceeds ${MAX_IMAGE_SIZE_BYTES / 1024 / 1024}MB size limit` };
 		}
 
 		const logoDir = getLogoDirectory(entityId, entityType);

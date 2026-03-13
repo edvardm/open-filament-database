@@ -27,9 +27,7 @@ import {
 } from '$lib/utils/changeTreeOps';
 import { useChangeTracking } from './environment';
 import * as imageDb from '$lib/services/imageDb';
-
-const STORAGE_KEY_CHANGES = 'ofd_pending_changes';
-const STORAGE_KEY_IMAGES_PREFIX = 'ofd_image_';
+import { STORAGE_KEY_CHANGES, STORAGE_KEY_IMAGES_PREFIX } from '$lib/config/storageKeys';
 
 /**
  * Calculate a user-friendly description for a change

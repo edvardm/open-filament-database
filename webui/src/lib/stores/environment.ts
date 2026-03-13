@@ -12,8 +12,8 @@ function detectEnvironment(): 'local' | 'cloud' {
 	// Valid values are 'local' or 'cloud'
 	const mode = env.PUBLIC_APP_MODE?.toLowerCase();
 
-	// In browser, allow localStorage override for testing
-	if (browser) {
+	// In browser, allow localStorage override for testing (dev only)
+	if (browser && import.meta.env.DEV) {
 		const forceMode = localStorage.getItem('FORCE_CLOUD_MODE');
 		if (forceMode === 'true') {
 			return 'cloud';

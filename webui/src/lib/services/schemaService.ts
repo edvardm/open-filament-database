@@ -138,33 +138,14 @@ export function getFieldDescription(
 export function extractTraitsFromSchema(schema: any): Record<string, { description: string }> {
 	const traits: Record<string, { description: string }> = {};
 
-	if (!schema?.properties) {
-		return traits;
-	}
+	// Traits live inside properties.traits.properties in the variant schema
+	const traitProps = schema?.properties?.traits?.properties || schema?.properties || {};
 
-	// Traits are boolean properties in the schema
-	for (const [key, value] of Object.entries(schema.properties)) {
+	for (const [key, value] of Object.entries(traitProps)) {
 		const prop = value as any;
-		// Identify traits by their boolean type and specific naming patterns
-		if (prop.type === 'boolean' && prop.description) {
-			// Common trait prefixes
-			const traitPrefixes = [
-				'translucent', 'transparent', 'matte', 'silk', 'glitter', 'iridescent',
-				'pearlescent', 'neon', 'glow', 'without_pigments', 'temperature_color_change',
-				'gradual_color_change', 'coextruded', 'illuminescent_color_change',
-				'imitates_', 'lithophane', 'recycled', 'recyclable', 'biodegradable',
-				'home_compostable', 'industrially_compostable', 'bio_based', 'abrasive',
-				'foaming', 'castable', 'self_extinguishing', 'high_temperature',
-				'low_outgassing', 'water_soluble', 'ipa_soluble', 'limonene_soluble',
-				'esd_safe', 'conductive', 'emi_shielding', 'paramagnetic', 'biocompatible',
-				'antibacterial', 'air_filtering', 'radiation_shielding', 'filtration_recommended',
-				'blend', 'limited_edition', 'contains_'
-			];
-
-			const isTrait = traitPrefixes.some(prefix => key.startsWith(prefix) || key === prefix);
-			if (isTrait) {
-				traits[key] = { description: prop.description };
-			}
+		// Traits are boolean properties; use x-category as authoritative marker if present
+		if (prop.type === 'boolean' && (prop['x-category'] || prop.description)) {
+			traits[key] = { description: prop.description || '' };
 		}
 	}
 

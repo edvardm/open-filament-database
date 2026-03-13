@@ -6,8 +6,9 @@ import { spawn } from 'node:child_process';
 import { IS_LOCAL } from '$lib/server/cloudProxy';
 import { entityPathToFsPath, entityPathToDir, cleanEntityData, DATA_DIR, STORES_DIR, JSON_INDENT_LOCAL } from '$lib/server/saveUtils';
 
+import { MAX_IMAGE_SIZE_BYTES } from '$lib/config/imageConfig';
+
 const REPO_ROOT = path.resolve(process.cwd(), '..');
-const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 const ALLOWED_IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.svg', '.gif', '.webp']);
 
 /**

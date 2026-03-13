@@ -7,6 +7,7 @@
 	import { removeIdFromSchema } from '$lib/utils/schemaUtils';
 	import { initializeFormData, buildSubmitData } from './schemaFormUtils';
 	import type { SchemaFormConfig } from './schemaFormTypes';
+	import { LOGO_REQUIRED_ERROR, LOGO_UPDATE_SUCCESS } from '$lib/config/messages';
 
 	interface Props {
 		brand: any;
@@ -79,7 +80,7 @@
 	function handleSubmit(data: any) {
 		// Check if logo exists before allowing submission
 		if (!brand.logo && !logoChanged) {
-			logoError = 'A logo is required. Please upload a logo before submitting.';
+			logoError = LOGO_REQUIRED_ERROR;
 			return;
 		}
 
@@ -152,7 +153,7 @@
 			label="Brand Logo"
 		/>
 		{#if logoChanged}
-			<p class="text-sm text-green-600 -mt-2 mb-4">Logo will be updated when you save</p>
+			<p class="text-sm text-green-600 -mt-2 mb-4">{LOGO_UPDATE_SUCCESS}</p>
 		{/if}
 		{#if logoError}
 			<p class="text-sm text-destructive -mt-2 mb-4">{logoError}</p>

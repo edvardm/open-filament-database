@@ -2,7 +2,6 @@
 	import { onMount } from 'svelte';
 	import type { Store, Brand } from '$lib/types/database';
 	import { db } from '$lib/services/database';
-	import { env } from '$env/dynamic/public';
 
 	let stores: Store[] = $state([]);
 	let brands: Brand[] = $state([]);
@@ -151,7 +150,6 @@
 				</a>
 			</section>
 
-			{#if env.PUBLIC_API_BASE_URL}
 			<section class="rounded-lg border bg-card p-6 shadow-sm">
 				<div class="mb-5 flex items-start justify-between">
 					<div>
@@ -160,14 +158,13 @@
 					</div>
 				</div>
 				<a
-					href={env.PUBLIC_API_BASE_URL}
+					href="/docs"
 					class="inline-flex items-center rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
 				>
 					View Our API
 					<span class="ml-2">&rarr;</span>
 				</a>
 			</section>
-			{/if}
 		</div>
 
 		<!-- Good to know -->

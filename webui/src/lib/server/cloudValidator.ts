@@ -7,6 +7,7 @@ import { API_BASE } from './cloudProxy';
 import { SAFE_SEGMENT, cleanEntityData } from './saveUtils';
 import type { Job } from './jobManager';
 import { validateLogoDimensions } from './imageValidation';
+import { MAX_IMAGE_SIZE_BYTES, ALLOWED_IMAGE_EXTENSIONS } from '$lib/config/imageConfig';
 
 // --- Types ---
 
@@ -29,7 +30,8 @@ interface ValidationResult {
 const SCHEMA_NAMES = ['brand', 'material', 'filament', 'variant', 'store', 'sizes', 'material_types'] as const;
 type SchemaName = (typeof SCHEMA_NAMES)[number];
 
-const ALLOWED_ENTITY_TYPES = new Set(['brand', 'material', 'filament', 'variant', 'store']);
+import { ENTITY_CONFIGS } from './entityConfig';
+const ALLOWED_ENTITY_TYPES = new Set(Object.keys(ENTITY_CONFIGS));
 const ALLOWED_OPERATIONS = new Set(['create', 'update', 'delete']);
 const MAX_CHANGES = 500;
 
@@ -248,8 +250,6 @@ function validateEntityPath(entityPath: string, entityType: string): boolean {
 
 // --- Image validation ---
 
-const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
-const ALLOWED_IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.svg']);
 const ALLOWED_MIME_TYPES = new Set(['image/png', 'image/jpeg', 'image/svg+xml']);
 const BASE64_REGEX = /^[A-Za-z0-9+/]*={0,2}$/;
 

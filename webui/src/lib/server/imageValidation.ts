@@ -20,10 +20,10 @@ interface ImageDimensions {
 	height: number;
 }
 
-// --- Constants (matching Rust validator) ---
+// --- Constants (re-exported from shared config) ---
 
-export const LOGO_MIN_SIZE = 100;
-export const LOGO_MAX_SIZE = 400;
+export { LOGO_MIN_SIZE, LOGO_MAX_SIZE } from '$lib/config/imageConfig';
+import { LOGO_MIN_SIZE, LOGO_MAX_SIZE } from '$lib/config/imageConfig';
 
 // --- PNG parsing ---
 

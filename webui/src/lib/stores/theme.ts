@@ -1,14 +1,13 @@
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
+import { STORAGE_KEY_THEME } from '$lib/config/storageKeys';
 
 type Theme = 'light' | 'dark' | 'system';
-
-const STORAGE_KEY = 'ofd_theme';
 
 function getInitialTheme(): Theme {
 	if (!browser) return 'system';
 
-	const stored = localStorage.getItem(STORAGE_KEY);
+	const stored = localStorage.getItem(STORAGE_KEY_THEME);
 	if (stored === 'light' || stored === 'dark' || stored === 'system') {
 		return stored;
 	}
@@ -41,7 +40,7 @@ function createThemeStore() {
 
 		// Listen for system theme changes
 		window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-			const currentTheme = localStorage.getItem(STORAGE_KEY) as Theme || 'system';
+			const currentTheme = localStorage.getItem(STORAGE_KEY_THEME) as Theme || 'system';
 			if (currentTheme === 'system') {
 				applyTheme('system');
 			}
@@ -53,7 +52,7 @@ function createThemeStore() {
 
 		setTheme(theme: Theme) {
 			if (browser) {
-				localStorage.setItem(STORAGE_KEY, theme);
+				localStorage.setItem(STORAGE_KEY_THEME, theme);
 			}
 			set(theme);
 			applyTheme(theme);
@@ -77,7 +76,7 @@ function createThemeStore() {
 				}
 
 				if (browser) {
-					localStorage.setItem(STORAGE_KEY, newTheme);
+					localStorage.setItem(STORAGE_KEY_THEME, newTheme);
 				}
 				applyTheme(newTheme);
 				return newTheme;

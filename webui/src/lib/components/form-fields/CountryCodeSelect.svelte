@@ -2,6 +2,7 @@
 	import { COUNTRY_CODES, filterCountryCodes, type CountryCode } from '$lib/data/countryCodes';
 	import Tooltip from './Tooltip.svelte';
 	import { INPUT_CLASSES, LABEL_CLASSES, REQUIRED_INDICATOR } from '$lib/styles/formStyles';
+	import { COUNTRY_SEARCH_PLACEHOLDER } from '$lib/config/messages';
 
 	interface Props {
 		value: string;
@@ -16,7 +17,7 @@
 		label = '',
 		required = false,
 		tooltip = '',
-		placeholder = 'Search country...'
+		placeholder = COUNTRY_SEARCH_PLACEHOLDER
 	}: Props = $props();
 
 	let inputEl: HTMLInputElement | null = $state(null);

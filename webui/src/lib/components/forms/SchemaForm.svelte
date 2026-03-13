@@ -14,6 +14,7 @@
 		TwoColumnLayout
 	} from '$lib/components/form-fields';
 	import { Button } from '$lib/components/ui';
+	import { COUNTRY_SEARCH_PLACEHOLDER } from '$lib/config/messages';
 	import type { SchemaFormConfig, ProcessedField, RenderItem } from './schemaFormTypes';
 	import {
 		processFields,
@@ -286,7 +287,7 @@
 			{label}
 			{required}
 			{tooltip}
-			placeholder="Search country..."
+			placeholder={COUNTRY_SEARCH_PLACEHOLDER}
 		/>
 	{:else if field.type === 'stringList'}
 		<CountryCodeList

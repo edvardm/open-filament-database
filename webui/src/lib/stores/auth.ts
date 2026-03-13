@@ -3,6 +3,7 @@
  */
 
 import { writable, derived } from 'svelte/store';
+import { STORAGE_KEY_REOPEN_WIZARD } from '$lib/config/storageKeys';
 
 interface GitHubUser {
 	login: string;
@@ -57,7 +58,7 @@ function createAuthStore() {
 		},
 
 		ghLogin() {
-			localStorage.setItem('ofd_reopen_wizard', 'github');
+			localStorage.setItem(STORAGE_KEY_REOPEN_WIZARD, 'github');
 			window.location.href = '/api/auth/github/login';
 		},
 
@@ -83,7 +84,7 @@ function createAuthStore() {
 		},
 
 		spLogin() {
-			localStorage.setItem('ofd_reopen_wizard', 'simplyprint');
+			localStorage.setItem(STORAGE_KEY_REOPEN_WIZARD, 'simplyprint');
 			window.location.href = '/api/auth/simplyprint/login';
 		},
 

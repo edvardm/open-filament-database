@@ -93,7 +93,7 @@ export async function sendChangesRequestedEmail(
 		? `\n\nReviewer comments:\n${reviewComments}\n`
 		: '';
 	const commentsHtml = reviewComments
-		? `<h3>Reviewer comments:</h3><blockquote>${reviewComments.replace(/\n/g, '<br>')}</blockquote>`
+		? `<h3>Reviewer comments:</h3><blockquote>${reviewComments.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/\n/g, '<br>')}</blockquote>`
 		: '';
 
 	await sendEmail(

@@ -9,6 +9,7 @@
 	import { db } from '$lib/services/database';
 	import { generateChangeTitle } from '$lib/utils/changeTitleGenerator';
 	import { authStore } from '$lib/stores/auth';
+	import { STORAGE_KEY_REOPEN_WIZARD } from '$lib/config/storageKeys';
 	import { onMount, onDestroy } from 'svelte';
 
 	let menuOpen = $state(false);
@@ -49,9 +50,9 @@
 		stores = await db.loadStores();
 
 		// Reopen submission wizard after OAuth redirect (GitHub or SimplyPrint)
-		const savedMethod = localStorage.getItem('ofd_reopen_wizard');
+		const savedMethod = localStorage.getItem(STORAGE_KEY_REOPEN_WIZARD);
 		if (savedMethod) {
-			localStorage.removeItem('ofd_reopen_wizard');
+			localStorage.removeItem(STORAGE_KEY_REOPEN_WIZARD);
 			const params = new URLSearchParams(window.location.search);
 			const hasSuccess = params.has('auth_success') || params.has('sp_auth_success');
 			const authError = params.get('sp_auth_error') || params.get('auth_error');

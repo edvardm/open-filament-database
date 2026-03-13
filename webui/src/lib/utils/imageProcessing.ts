@@ -18,8 +18,7 @@ export interface ProcessedImage {
 	height: number;
 }
 
-const MIN_SIZE = 100;
-const MAX_SIZE = 400;
+import { LOGO_MIN_SIZE as MIN_SIZE, LOGO_MAX_SIZE as MAX_SIZE } from '$lib/config/imageConfig';
 
 /**
  * Validate an image file
@@ -271,6 +270,29 @@ export async function processSvg(svgDataUrl: string): Promise<ProcessedImage> {
 				reject(new Error('Invalid SVG file'));
 				return;
 			}
+
+			// Sanitize SVG: remove potentially dangerous elements
+			const DANGEROUS_ELEMENTS = [
+				'script',
+				'iframe',
+				'object',
+				'embed',
+				'foreignObject',
+				'use'
+			];
+			for (const tag of DANGEROUS_ELEMENTS) {
+				const elements = svgDoc.querySelectorAll(tag);
+				elements.forEach((el) => el.remove());
+			}
+			// Remove event handler attributes (onclick, onload, onerror, etc.)
+			const allElements = svgDoc.querySelectorAll('*');
+			allElements.forEach((el) => {
+				for (const attr of Array.from(el.attributes)) {
+					if (attr.name.startsWith('on')) {
+						el.removeAttribute(attr.name);
+					}
+				}
+			});
 
 			// Get or calculate bounding box
 			const viewBox = svgElement.getAttribute('viewBox');

@@ -3,7 +3,10 @@
  * Changes are stored in localStorage and layered over the base data from the API
  */
 
-export type EntityType = 'store' | 'brand' | 'material' | 'filament' | 'variant';
+import { SCHEMA_NAMES } from '$lib/services/schemaService';
+
+/** Entity types derived from the schema service's SCHEMA_NAMES registry. */
+export type EntityType = Exclude<keyof typeof SCHEMA_NAMES, 'materialTypes'>;
 
 export type ChangeOperation = 'create' | 'update' | 'delete';
 
