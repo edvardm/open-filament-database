@@ -26,6 +26,27 @@
 	let loading: boolean = $state(true);
 	let error: string | null = $state(null);
 	let createError: string | null = $state(null);
+	let variantSearch: string = $state('');
+
+	let filteredVariants = $derived.by(() => {
+		const q = variantSearch.toLowerCase().trim();
+		if (!q) return displayVariants;
+		return displayVariants.filter((v) => {
+			// Search name, id, slug, color hex
+			const fields = [v.name, v.id, v.slug, v.color_hex].filter(Boolean);
+			if (fields.some((f) => String(f).toLowerCase().includes(q))) return true;
+			// Search discontinued tag
+			if (v.discontinued && 'discontinued'.includes(q)) return true;
+			// Search traits - match against trait names (with underscores replaced by spaces)
+			if (v.traits) {
+				const activeTraits = Object.entries(v.traits)
+					.filter(([, val]) => val === true)
+					.map(([key]) => key.replace(/_/g, ' '));
+				if (activeTraits.some((t) => t.includes(q))) return true;
+			}
+			return false;
+		});
+	});
 
 	let displayVariants = $derived.by(() => withDeletedStubs({
 		changes: $changes,
@@ -328,8 +349,12 @@
 					onAdd={openCreateVariantModal}
 					itemCount={displayVariants.length}
 					emptyMessage="No variants found for this filament."
+					searchQuery={variantSearch}
+					onSearch={(v) => variantSearch = v}
+					searchPlaceholder="Search variants by name, color, traits..."
+					filteredCount={filteredVariants.length}
 				>
-					{#each displayVariants as variant}
+					{#each filteredVariants as variant}
 						{@const variantPath = `brands/${brandId}/materials/${materialType}/filaments/${filamentId}/variants/${variant.slug ?? variant.id}`}
 						{@const changeProps = getChildChangeProps($changes, $useChangeTracking, variantPath)}
 						{@const sizesCount = variant.sizes?.length ?? 0}

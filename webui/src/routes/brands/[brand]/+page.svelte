@@ -31,6 +31,16 @@
 	let showCreateMaterialModal: boolean = $state(false);
 	let creatingMaterial: boolean = $state(false);
 	let createMaterialError: string | null = $state(null);
+	let materialSearch: string = $state('');
+
+	let filteredMaterials = $derived.by(() => {
+		const q = materialSearch.toLowerCase().trim();
+		if (!q) return displayMaterials;
+		return displayMaterials.filter((m) => {
+			const fields = [m.material, m.materialType, m.material_class, m.id].filter(Boolean);
+			return fields.some((f) => String(f).toLowerCase().includes(q));
+		});
+	});
 
 	const messageHandler = createMessageHandler();
 
@@ -267,8 +277,12 @@
 					onAdd={openCreateMaterialModal}
 					itemCount={displayMaterials.length}
 					emptyMessage="No materials found for this brand."
+					searchQuery={materialSearch}
+					onSearch={(v) => materialSearch = v}
+					searchPlaceholder="Search materials..."
+					filteredCount={filteredMaterials.length}
 				>
-					{#each displayMaterials as material}
+					{#each filteredMaterials as material}
 						{@const materialHref = `/brands/${brandData.slug ?? brandData.id}/${material.materialType ?? material.material.toLowerCase()}`}
 						{@const materialPath = `brands/${brandId}/materials/${material.materialType ?? material.material.toLowerCase()}`}
 						{@const changeProps = getChildChangeProps($changes, $useChangeTracking, materialPath)}

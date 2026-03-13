@@ -28,6 +28,18 @@
 	let loading: boolean = $state(true);
 	let error: string | null = $state(null);
 	let createError: string | null = $state(null);
+	let filamentSearch: string = $state('');
+
+	let filteredFilaments = $derived.by(() => {
+		const q = filamentSearch.toLowerCase().trim();
+		if (!q) return displayFilaments;
+		return displayFilaments.filter((f) => {
+			const certs = f.certifications?.join(' ') ?? '';
+			const fields = [f.name, f.id, f.slug, certs].filter(Boolean);
+			if (f.discontinued && 'discontinued'.includes(q)) return true;
+			return fields.some((v) => String(v).toLowerCase().includes(q));
+		});
+	});
 
 	let displayFilaments = $derived.by(() => withDeletedStubs({
 		changes: $changes,
@@ -276,8 +288,12 @@
 					onAdd={openCreateFilamentModal}
 					itemCount={displayFilaments.length}
 					emptyMessage="No filaments found for this material."
+					searchQuery={filamentSearch}
+					onSearch={(v) => filamentSearch = v}
+					searchPlaceholder="Search filaments..."
+					filteredCount={filteredFilaments.length}
 				>
-					{#each displayFilaments as filament}
+					{#each filteredFilaments as filament}
 						{@const filamentHref = `/brands/${brandId}/${materialType}/${filament.slug ?? filament.id}`}
 						{@const filamentPath = `brands/${brandId}/materials/${materialType}/filaments/${filament.slug ?? filament.id}`}
 						{@const changeProps = getChildChangeProps($changes, $useChangeTracking, filamentPath)}

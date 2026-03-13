@@ -25,7 +25,7 @@ from ofd.builder.exporters import (
     export_sqlite,
     export_sqlite_stores,
 )
-from ofd.builder.utils import get_current_timestamp
+from ofd.builder.utils import get_current_timestamp, get_git_commit
 
 project_root = Path(__file__).parent.parent.parent
 
@@ -151,11 +151,14 @@ def run_build(args: argparse.Namespace) -> int:
     # Generate version if not provided
     version = args.version or generate_version()
     generated_at = get_current_timestamp()
+    commit = get_git_commit()
 
     print("=" * 60)
     print("Open Filament Database Builder")
     print("=" * 60)
     print(f"Version: {version}")
+    if commit:
+        print(f"Commit: {commit[:12]}")
     print(f"Generated at: {generated_at}")
     print(f"Data directory: {data_dir}")
     print(f"Stores directory: {stores_dir}")
@@ -213,6 +216,7 @@ def run_build(args: argparse.Namespace) -> int:
             builder_schemas_dir=str(builder_schemas_dir),
             data_dir=str(data_dir),
             stores_dir=str(stores_dir),
+            commit=commit,
         )
     else:
         print("\n[6/10] Skipping Static API export")

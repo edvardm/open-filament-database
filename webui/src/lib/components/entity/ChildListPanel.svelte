@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { Button } from '$lib/components/ui';
+	import { Button, SearchBar } from '$lib/components/ui';
 
 	interface Props {
 		title: string;
@@ -9,6 +9,10 @@
 		itemCount: number;
 		emptyMessage: string;
 		buttonVariant?: 'primary' | 'secondary' | 'destructive' | 'ghost' | 'outline' | 'link';
+		searchQuery?: string;
+		onSearch?: (query: string) => void;
+		searchPlaceholder?: string;
+		filteredCount?: number;
 		children: Snippet;
 	}
 
@@ -19,6 +23,10 @@
 		itemCount,
 		emptyMessage,
 		buttonVariant = 'secondary',
+		searchQuery = '',
+		onSearch,
+		searchPlaceholder = 'Search...',
+		filteredCount,
 		children
 	}: Props = $props();
 </script>
@@ -34,8 +42,21 @@
 		</Button>
 	</div>
 
+	{#if onSearch && itemCount > 0}
+		<div class="mb-4">
+			<SearchBar value={searchQuery} placeholder={searchPlaceholder} oninput={onSearch} />
+			{#if searchQuery && filteredCount !== undefined}
+				<p class="text-xs text-muted-foreground mt-1">
+					{filteredCount} of {itemCount} shown
+				</p>
+			{/if}
+		</div>
+	{/if}
+
 	{#if itemCount === 0}
 		<p class="text-muted-foreground">{emptyMessage}</p>
+	{:else if searchQuery && filteredCount === 0}
+		<p class="text-muted-foreground">No results matching "{searchQuery}"</p>
 	{:else}
 		<div class="space-y-2">
 			{@render children()}
