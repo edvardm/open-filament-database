@@ -33,15 +33,7 @@
 				>
 					API Root
 				</a>
-				<a
-					href="{baseUrl}/api/v1/editor/"
-					target="_blank"
-					rel="noopener noreferrer"
-					class="inline-flex items-center rounded-md border bg-card px-4 py-2 text-sm font-medium transition-colors hover:bg-accent"
-				>
-					Editor Docs
-				</a>
-			{/if}
+				{/if}
 			{#if api}
 				<span class="flex items-center text-sm text-muted-foreground">v{api.version}</span>
 			{/if}
@@ -207,16 +199,6 @@ brands = requests.<span class="text-blue-600 dark:text-blue-400">get</span>(<spa
 															</details>
 														</li>
 														<li class="px-2 py-0.5"><a href="{baseUrl}/api/v1/brands/index.json" class="text-primary hover:underline">index.json</a></li>
-													</ul>
-												</details>
-											</li>
-											<li>
-												<details>
-													<summary class="cursor-pointer rounded px-2 py-1 font-medium hover:bg-accent">editor/</summary>
-													<ul class="ml-4 border-l pl-3">
-														<li class="px-2 py-0.5 text-muted-foreground">*.html</li>
-														<li class="px-2 py-0.5"><a href="{baseUrl}/api/v1/editor/index.html" class="text-primary hover:underline">index.html</a></li>
-														<li class="px-2 py-0.5"><a href="{baseUrl}/api/v1/editor/index.json" class="text-primary hover:underline">index.json</a></li>
 													</ul>
 												</details>
 											</li>

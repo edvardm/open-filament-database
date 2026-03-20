@@ -356,7 +356,6 @@ def export_api(
         "brand_logos": "brands/logo/index.json",
         "store_logos": "stores/logo/index.json",
         "badges": "badges/",
-        "editor": "editor/",
         "all": "../json/all.json",
     }
     if schemas_count > 0:
