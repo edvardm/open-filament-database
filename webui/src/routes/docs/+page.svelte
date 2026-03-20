@@ -13,7 +13,8 @@
 	<header class="mb-10">
 		<h1 class="mb-2 text-3xl font-bold tracking-tight">Open Filament Database API</h1>
 		<p class="text-lg text-muted-foreground">
-			A community-maintained database of 3D printing filaments, available as static JSON, CSV, and SQLite.
+			The dataset is rebuilt daily and published as static JSON, CSV, and SQLite files.
+			All data is validated against JSON Schema Draft-07 schemas served from the API itself.
 		</p>
 		<div class="mt-4 flex flex-wrap gap-3">
 			<a
@@ -33,7 +34,7 @@
 				>
 					API Root
 				</a>
-				{/if}
+			{/if}
 			{#if api}
 				<span class="flex items-center text-sm text-muted-foreground">v{api.version}</span>
 			{/if}
@@ -49,6 +50,17 @@
 			<p class="text-destructive">Could not fetch API data from {baseUrl}.</p>
 		</div>
 	{:else}
+		<!-- How it works -->
+		<section class="mb-8 rounded-lg border bg-card p-6 shadow-sm">
+			<h2 class="mb-3 text-xl font-semibold">How it Works</h2>
+			<div class="space-y-2 text-sm text-muted-foreground">
+				<p>The Open Filament Database is a <strong class="text-foreground">static dataset</strong> rebuilt daily from source YAML files. There is no dynamic server &mdash; the API is a collection of pre-built JSON files served from GitHub Pages.</p>
+				<p>The <strong class="text-foreground">entity hierarchy</strong> is: Brands &rarr; Materials &rarr; Filaments &rarr; Variants (with Sizes). Stores are independent entities.</p>
+				<p>Every entity type has a corresponding <strong class="text-foreground">JSON Schema</strong> available at <code class="rounded bg-secondary px-1.5 py-0.5 text-xs">/schemas/</code>. Schemas include custom <code class="rounded bg-secondary px-1.5 py-0.5 text-xs">x-</code> extension properties (<code class="rounded bg-secondary px-1.5 py-0.5 text-xs">x-category</code>, <code class="rounded bg-secondary px-1.5 py-0.5 text-xs">x-label</code>, <code class="rounded bg-secondary px-1.5 py-0.5 text-xs">x-description</code>) that this editor uses to dynamically build its UI.</p>
+				<p>Contributions are made through this web editor: browse the data, make edits, and submit &mdash; changes are validated against the schemas and reviewed by a maintainer.</p>
+			</div>
+		</section>
+
 		<!-- Dataset Statistics -->
 		<section class="mb-8 rounded-lg border bg-card p-6 shadow-sm">
 			<div class="mb-1 flex items-baseline justify-between">
@@ -75,24 +87,19 @@
 		<!-- API Endpoints -->
 		<section class="mb-8 rounded-lg border bg-card p-6 shadow-sm">
 			<h2 class="mb-1 text-xl font-semibold">API Endpoints</h2>
-			<p class="mb-5 text-sm text-muted-foreground">All responses are static JSON files. Base URL: <code class="rounded bg-secondary px-1.5 py-0.5 text-xs">/api/v1/</code></p>
+			<p class="mb-5 text-sm text-muted-foreground">All responses are static JSON files rebuilt daily. Base URL: <code class="rounded bg-secondary px-1.5 py-0.5 text-xs">/api/v1/</code></p>
 
 			<h3 class="mb-2 text-base font-semibold">Brands</h3>
 			<div class="mb-5 divide-y rounded-lg border">
 				<div class="flex items-center gap-3 px-4 py-2.5">
 					<span class="rounded bg-green-500/15 px-2 py-0.5 text-xs font-semibold text-green-600 dark:text-green-400">GET</span>
 					<code class="text-sm">/brands/index.json</code>
-					<span class="text-sm text-muted-foreground">List all brands</span>
+					<span class="text-sm text-muted-foreground">List all brands with material counts</span>
 				</div>
 				<div class="flex items-center gap-3 px-4 py-2.5">
 					<span class="rounded bg-green-500/15 px-2 py-0.5 text-xs font-semibold text-green-600 dark:text-green-400">GET</span>
 					<code class="text-sm">/brands/{'{slug}'}/index.json</code>
-					<span class="text-sm text-muted-foreground">Brand details</span>
-				</div>
-				<div class="flex items-center gap-3 px-4 py-2.5">
-					<span class="rounded bg-green-500/15 px-2 py-0.5 text-xs font-semibold text-green-600 dark:text-green-400">GET</span>
-					<code class="text-sm">/brands/logo/index.json</code>
-					<span class="text-sm text-muted-foreground">All brand logos</span>
+					<span class="text-sm text-muted-foreground">Brand details with nested materials, filaments, and variants</span>
 				</div>
 			</div>
 
@@ -101,17 +108,17 @@
 				<div class="flex items-center gap-3 px-4 py-2.5">
 					<span class="rounded bg-green-500/15 px-2 py-0.5 text-xs font-semibold text-green-600 dark:text-green-400">GET</span>
 					<code class="text-sm">/brands/{'{brand}'}/materials/{'{material}'}/index.json</code>
-					<span class="text-sm text-muted-foreground">Material details</span>
+					<span class="text-sm text-muted-foreground">Material with its filaments</span>
 				</div>
 				<div class="flex items-center gap-3 px-4 py-2.5">
 					<span class="rounded bg-green-500/15 px-2 py-0.5 text-xs font-semibold text-green-600 dark:text-green-400">GET</span>
 					<code class="text-sm">/.../filaments/{'{filament}'}/index.json</code>
-					<span class="text-sm text-muted-foreground">Filament details</span>
+					<span class="text-sm text-muted-foreground">Filament with slicer settings and variants</span>
 				</div>
 				<div class="flex items-center gap-3 px-4 py-2.5">
 					<span class="rounded bg-green-500/15 px-2 py-0.5 text-xs font-semibold text-green-600 dark:text-green-400">GET</span>
 					<code class="text-sm">/.../variants/{'{variant}'}.json</code>
-					<span class="text-sm text-muted-foreground">Color variant with sizes</span>
+					<span class="text-sm text-muted-foreground">Color variant with sizes and purchase links</span>
 				</div>
 			</div>
 
@@ -125,16 +132,88 @@
 				<div class="flex items-center gap-3 px-4 py-2.5">
 					<span class="rounded bg-green-500/15 px-2 py-0.5 text-xs font-semibold text-green-600 dark:text-green-400">GET</span>
 					<code class="text-sm">/stores/{'{slug}'}.json</code>
-					<span class="text-sm text-muted-foreground">Store details</span>
+					<span class="text-sm text-muted-foreground">Store details with location and contact info</span>
+				</div>
+			</div>
+
+			<h3 class="mb-2 text-base font-semibold">Logos</h3>
+			<div class="mb-5 divide-y rounded-lg border">
+				<div class="flex items-center gap-3 px-4 py-2.5">
+					<span class="rounded bg-green-500/15 px-2 py-0.5 text-xs font-semibold text-green-600 dark:text-green-400">GET</span>
+					<code class="text-sm">/brands/logo/index.json</code>
+					<span class="text-sm text-muted-foreground">All brand logo metadata</span>
+				</div>
+				<div class="flex items-center gap-3 px-4 py-2.5">
+					<span class="rounded bg-green-500/15 px-2 py-0.5 text-xs font-semibold text-green-600 dark:text-green-400">GET</span>
+					<code class="text-sm">/brands/logo/{'{id}'}.{'{ext}'}</code>
+					<span class="text-sm text-muted-foreground">Brand logo image (PNG, JPG, SVG)</span>
+				</div>
+				<div class="flex items-center gap-3 px-4 py-2.5">
+					<span class="rounded bg-green-500/15 px-2 py-0.5 text-xs font-semibold text-green-600 dark:text-green-400">GET</span>
+					<code class="text-sm">/stores/logo/index.json</code>
+					<span class="text-sm text-muted-foreground">All store logo metadata</span>
+				</div>
+				<div class="flex items-center gap-3 px-4 py-2.5">
+					<span class="rounded bg-green-500/15 px-2 py-0.5 text-xs font-semibold text-green-600 dark:text-green-400">GET</span>
+					<code class="text-sm">/stores/logo/{'{id}'}.{'{ext}'}</code>
+					<span class="text-sm text-muted-foreground">Store logo image (PNG, JPG, SVG)</span>
 				</div>
 			</div>
 
 			<h3 class="mb-2 text-base font-semibold">Schemas</h3>
-			<div class="divide-y rounded-lg border">
+			<div class="mb-5 divide-y rounded-lg border">
 				<div class="flex items-center gap-3 px-4 py-2.5">
 					<span class="rounded bg-green-500/15 px-2 py-0.5 text-xs font-semibold text-green-600 dark:text-green-400">GET</span>
 					<code class="text-sm">/schemas/index.json</code>
-					<span class="text-sm text-muted-foreground">All JSON schemas</span>
+					<span class="text-sm text-muted-foreground">Schema index listing all available schemas</span>
+				</div>
+				<div class="flex items-center gap-3 px-4 py-2.5">
+					<span class="rounded bg-green-500/15 px-2 py-0.5 text-xs font-semibold text-green-600 dark:text-green-400">GET</span>
+					<code class="text-sm">/schemas/{'{name}'}.json</code>
+					<span class="text-sm text-muted-foreground">Individual schema (JSON Schema Draft-07 with x- extensions)</span>
+				</div>
+			</div>
+
+			<h3 class="mb-2 text-base font-semibold">Badges</h3>
+			<div class="mb-5 divide-y rounded-lg border">
+				<div class="flex items-center gap-3 px-4 py-2.5">
+					<span class="rounded bg-green-500/15 px-2 py-0.5 text-xs font-semibold text-green-600 dark:text-green-400">GET</span>
+					<code class="text-sm">/badges/{'{name}'}.svg</code>
+					<span class="text-sm text-muted-foreground">SVG count badges (brands, filaments, variants, stores)</span>
+				</div>
+			</div>
+
+			<h3 class="mb-2 text-base font-semibold">Bulk Downloads</h3>
+			<div class="divide-y rounded-lg border">
+				<div class="flex items-center gap-3 px-4 py-2.5">
+					<span class="rounded bg-green-500/15 px-2 py-0.5 text-xs font-semibold text-green-600 dark:text-green-400">GET</span>
+					<code class="text-sm">/json/all.json</code>
+					<span class="text-sm text-muted-foreground">Complete dataset as a single JSON file</span>
+				</div>
+				<div class="flex items-center gap-3 px-4 py-2.5">
+					<span class="rounded bg-green-500/15 px-2 py-0.5 text-xs font-semibold text-green-600 dark:text-green-400">GET</span>
+					<code class="text-sm">/json/all.json.gz</code>
+					<span class="text-sm text-muted-foreground">Gzipped JSON</span>
+				</div>
+				<div class="flex items-center gap-3 px-4 py-2.5">
+					<span class="rounded bg-green-500/15 px-2 py-0.5 text-xs font-semibold text-green-600 dark:text-green-400">GET</span>
+					<code class="text-sm">/json/all.ndjson</code>
+					<span class="text-sm text-muted-foreground">Newline-delimited JSON (one record per line)</span>
+				</div>
+				<div class="flex items-center gap-3 px-4 py-2.5">
+					<span class="rounded bg-green-500/15 px-2 py-0.5 text-xs font-semibold text-green-600 dark:text-green-400">GET</span>
+					<code class="text-sm">/csv/{'{entity}'}.csv</code>
+					<span class="text-sm text-muted-foreground">CSV exports (brands, filaments, materials, variants, sizes, stores, purchase_links)</span>
+				</div>
+				<div class="flex items-center gap-3 px-4 py-2.5">
+					<span class="rounded bg-green-500/15 px-2 py-0.5 text-xs font-semibold text-green-600 dark:text-green-400">GET</span>
+					<code class="text-sm">/sqlite/filaments.db</code>
+					<span class="text-sm text-muted-foreground">SQLite database (filament data)</span>
+				</div>
+				<div class="flex items-center gap-3 px-4 py-2.5">
+					<span class="rounded bg-green-500/15 px-2 py-0.5 text-xs font-semibold text-green-600 dark:text-green-400">GET</span>
+					<code class="text-sm">/sqlite/stores.db</code>
+					<span class="text-sm text-muted-foreground">SQLite database (store data)</span>
 				</div>
 			</div>
 		</section>
@@ -225,7 +304,7 @@ brands = requests.<span class="text-blue-600 dark:text-blue-400">get</span>(<spa
 												<details>
 													<summary class="cursor-pointer rounded px-2 py-1 font-medium hover:bg-accent">schemas/</summary>
 													<ul class="ml-4 border-l pl-3">
-														<li class="px-2 py-0.5 text-muted-foreground">*.json</li>
+														<li class="px-2 py-0.5 text-muted-foreground">{'{name}'}.json</li>
 														<li class="px-2 py-0.5"><a href="{baseUrl}/api/v1/schemas/index.json" class="text-primary hover:underline">index.json</a></li>
 													</ul>
 												</details>
