@@ -1,6 +1,12 @@
 import { copyFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { env } from '$env/dynamic/public';
+import { installServerLogCapture } from '$lib/server/debugLog';
+
+// Install server-side log capture as early as possible so all output is buffered
+if (process.env.PUBLIC_DEBUG === 'true') {
+	installServerLogCapture();
+}
 
 // In cloud mode, env vars come from the platform — skip .env file management.
 // Use process.env directly since it's available before SvelteKit processes .env files.

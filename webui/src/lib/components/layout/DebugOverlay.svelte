@@ -3,11 +3,15 @@
 
 	let open = $state(false);
 	let filter: LogEntry['level'] | 'all' = $state('all');
+	let sourceFilter: LogEntry['source'] | 'all' = $state('all');
 	let autoScroll = $state(true);
 	let panel: HTMLElement | undefined = $state();
 
 	let filtered = $derived(
-		filter === 'all' ? $debugLog : $debugLog.filter((e) => e.level === filter)
+		$debugLog.filter((e) =>
+			(filter === 'all' || e.level === filter) &&
+			(sourceFilter === 'all' || e.source === sourceFilter)
+		)
 	);
 
 	let unreadErrors = $derived(
@@ -66,7 +70,15 @@
 					<span class="text-xs font-mono font-bold text-gray-300">Console</span>
 					<span class="text-[10px] text-gray-500">{filtered.length} entries</span>
 				</div>
-				<div class="flex items-center gap-2">
+				<div class="flex items-center gap-1">
+					<!-- Source filter -->
+					{#each ['all', 'server', 'client'] as src}
+						<button
+							onclick={() => sourceFilter = src as any}
+							class="rounded px-1.5 py-0.5 text-[10px] font-mono transition-colors {sourceFilter === src ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'}"
+						>{src}</button>
+					{/each}
+					<span class="text-gray-700">|</span>
 					<!-- Level filter -->
 					{#each ['all', 'error', 'warn', 'info', 'log', 'debug'] as lvl}
 						<button
@@ -74,6 +86,7 @@
 							class="rounded px-1.5 py-0.5 text-[10px] font-mono transition-colors {filter === lvl ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'}"
 						>{lvl}</button>
 					{/each}
+					<span class="text-gray-700">|</span>
 					<button onclick={() => autoScroll = !autoScroll} class="text-[10px] font-mono {autoScroll ? 'text-blue-400' : 'text-gray-600'}" title="Auto-scroll">
 						{autoScroll ? '⬇' : '⏸'}
 					</button>
@@ -89,6 +102,7 @@
 					{#each filtered as entry}
 						<div class="flex gap-2 border-b border-gray-900 py-0.5 hover:bg-gray-900/50">
 							<span class="shrink-0 text-gray-600">{formatTime(entry.timestamp)}</span>
+							<span class="shrink-0 w-7 text-[9px] {entry.source === 'server' ? 'text-purple-400' : 'text-cyan-400'}">{entry.source === 'server' ? 'SRV' : 'CLI'}</span>
 							<span class="shrink-0 w-10 text-right {levelColor(entry.level)}">{entry.level.toUpperCase().padStart(5)}</span>
 							<span class="text-gray-300 whitespace-pre-wrap break-all">{entry.args.join(' ')}</span>
 						</div>
