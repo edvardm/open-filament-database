@@ -4,15 +4,20 @@ Style Data Script - Sort, sanitize, and validate JSON data files.
 This script recursively processes all JSON files in the data/ and stores/
 directories to ensure consistent formatting, valid data, and correct naming.
 
-The script:
-1. Fixes folder names (hyphens → underscores) to match slug conventions
-2. Loads all schemas and extracts property key orderings
-3. Processes each JSON file and sorts keys according to schema
-4. Sanitizes data: fixes IDs, removes empty strings, defaults missing values
-5. Handles nested objects with their own key orderings
-6. Warns about keys found in data but not in schema
-7. Validates all files after processing using the ofd-validator
-8. Enforces 2-space indentation across all JSON files
+Pipeline (runs in order):
+1. Fix folder names: renames hyphenated folders to use underscores. If the
+   underscore variant already exists, merges the hyphenated folder into it
+   (filling gaps, deduplicating sizes) and deletes the hyphenated folder
+   only if the merge completed without errors.
+2. Load schemas and extract property key orderings.
+3. Process each JSON file:
+   a. Sanitize data: fix IDs with hyphens, strip whitespace from strings,
+      remove empty optional string fields (URLs, identifiers, etc.),
+      default sizes[].diameter from 0 to 1.75.
+   b. Sort keys according to schema ordering.
+4. Warn about keys found in data but not in schema.
+5. Validate all files using the ofd-validator (always, unless --dry-run).
+6. Enforce 2-space indentation across all JSON files.
 """
 
 import argparse
@@ -97,13 +102,17 @@ def fix_slug(name: str) -> str:
 
 
 def sanitize_data(data: Any, schema_name: str) -> tuple[Any, list[str]]:
-    """Sanitize a JSON data structure, returning (cleaned_data, list_of_changes).
+    """Sanitize a JSON data structure in-place.
 
-    Fixes applied:
-    - Strip whitespace from string values
-    - Remove empty-string optional fields
-    - Fix IDs containing hyphens (replace with underscores)
-    - Default sizes[].diameter to 1.75 when 0
+    Returns (cleaned_data, list_of_change_descriptions).
+
+    Fixes applied per schema type:
+    - All dicts: strip leading/trailing whitespace from string values;
+      remove empty-string values for optional fields (URLs, identifiers
+      defined in OPTIONAL_STRING_FIELDS); fix 'id' fields containing
+      hyphens by replacing with underscores.
+    - sizes: default sizes[].diameter from 0 to 1.75; sanitize nested
+      purchase_links dicts.
     """
     changes: list[str] = []
 
@@ -165,8 +174,12 @@ def fix_folder_names(root_dir: Path, dry_run: bool) -> list[str]:
     """Fix folders containing hyphens: rename or merge into underscore variant.
 
     Walks bottom-up so child renames happen before parent renames.
-    If the target already exists, merges the source into the target and
-    removes the source. Returns list of action descriptions.
+    If the underscore target does not exist, the folder is simply renamed.
+    If the target already exists, the source is merged into it using
+    merge_trees (existing data wins, sizes deduplicated). The source is
+    only deleted if the merge had no errors (no skipped/unreadable files).
+
+    Returns a list of action descriptions.
     """
     actions: list[str] = []
     if not root_dir.exists():
@@ -348,10 +361,14 @@ def sort_json_keys(data: Any, schema_info: SchemaInfo, extra_keys: set[str]) -> 
 
 @register_script
 class StyleDataScript(BaseScript):
-    """Sort and style JSON data files according to schema definitions."""
+    """Sort, sanitize, merge, and validate JSON data files.
+
+    Fixes folder names (merging duplicates), sanitizes field values,
+    sorts keys per schema, and validates via ofd-validator.
+    """
 
     name = "style_data"
-    description = "Sort JSON keys according to schema definitions and fix formatting"
+    description = "Sort, sanitize, and validate data files (keys, IDs, folders, empty fields)"
 
     def configure_parser(self, parser: argparse.ArgumentParser) -> None:
         """Add script-specific arguments."""

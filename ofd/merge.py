@@ -2,11 +2,19 @@
 OFD Merge Utilities.
 
 Shared functions for merging filament data directories. Used by the
-merge_data script and the import_openprinttag script.
+merge_data script, style_data script, and import_openprinttag script.
 
-Merge strategy: existing data wins. New data only fills gaps (missing
-keys, empty strings, empty lists). For sizes.json arrays, entries are
-deduplicated by (filament_weight, diameter).
+Merge strategy: existing data always wins. New data only fills gaps
+(missing keys, empty strings, empty lists). For sizes.json arrays,
+entries are deduplicated by (filament_weight, diameter).
+
+Safety guarantees:
+- merge_trees() raises ValueError if source and target paths overlap
+  (same path, or one is a parent of the other).
+- Unreadable JSON files are skipped with a "Skipped (unreadable)" action
+  rather than writing null to the target.
+- Callers should check merge_has_errors() before deleting the source
+  directory to avoid data loss from partial merges.
 """
 
 import json
@@ -64,8 +72,11 @@ def merge_sizes(existing: list[dict], new: list[dict]) -> list[dict]:
 def merge_json_file(target: Path, source: Path) -> bool:
     """Merge a single JSON file from source into target.
 
-    For dicts: fills gaps. For sizes arrays: deduplicates by key.
-    Returns True if target was modified.
+    For dicts: uses merge_dicts (fills gaps only, existing values win).
+    For lists: uses merge_sizes (deduplicates by filament_weight/diameter).
+
+    Returns True if target was modified. Returns False if source is
+    unreadable or no changes were needed.
     """
     source_data = load_json(source)
     if source_data is None:

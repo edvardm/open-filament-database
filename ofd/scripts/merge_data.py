@@ -6,6 +6,17 @@ overwriting existing data. Useful for fixing duplicate folders (e.g.
 merging a hyphenated folder into its underscore counterpart) or combining
 data from multiple sources.
 
+Merge strategy:
+- JSON dicts: existing values win; new data only fills missing/empty fields.
+- sizes.json arrays: deduplicated by (filament_weight, diameter).
+- Non-JSON files (logos, etc.): copied only if missing in the target.
+
+Safety:
+- Source and target paths must not overlap (same path or parent/child).
+- Validation runs via ofd-validator after merging, before any deletion.
+- --delete-source only removes the source if both validation passes and
+  the merge had no errors (no skipped/unreadable files).
+
 Examples:
     # Merge professional-lab into professional_lab, then delete source
     ofd script merge_data data/professional-lab data/professional_lab --delete-source
@@ -28,7 +39,11 @@ from ofd.validation import ValidationOrchestrator
 
 @register_script
 class MergeDataScript(BaseScript):
-    """Merge a source data directory into a target directory."""
+    """Merge a source data directory into a target directory.
+
+    Fills gaps without overwriting. Validates after merge and only
+    deletes the source when both validation and merge succeed.
+    """
 
     name = "merge_data"
     description = "Merge a source data directory into a target (fills gaps, never overwrites)"
