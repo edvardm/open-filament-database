@@ -588,13 +588,22 @@ function createChangeStore() {
 			// Clear existing images from IndexedDB
 			await imageDb.clearAll().catch(() => {});
 
+			// Ensure schemas are loaded so imported data is filtered to valid keys
+			const entityTypes = new Set(exportData.changes.map((c) => c.entity.type));
+			await Promise.all([...entityTypes].map((t) => getAllowedKeys(t)));
+
 			// Build a new change set from the imported data
 			const newChangeSet = createEmptyChangeSet();
 
 			for (const change of exportData.changes) {
 				const ep = parsePath(change.entity.path);
 				if (!ep) continue;
-				treeSetChange(newChangeSet, ep, change);
+				const cleaned = {
+					...change,
+					data: change.data ? filterToSchema(change.data, change.entity.type) : change.data,
+					originalData: change.originalData ? filterToSchema(change.originalData, change.entity.type) : change.originalData
+				};
+				treeSetChange(newChangeSet, ep, cleaned);
 			}
 
 			// Store imported images into IndexedDB
