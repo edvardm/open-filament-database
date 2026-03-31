@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Any
 
 from ofd.base import BaseScript, ScriptResult, register_script
+from ofd.merge import merge_trees
 from ofd.validation import ValidationOrchestrator
 
 # The canonical ID pattern from the schemas
@@ -161,14 +162,15 @@ def _sanitize_dict(data: dict[str, Any], changes: list[str], prefix: str = "") -
 
 
 def fix_folder_names(root_dir: Path, dry_run: bool) -> list[str]:
-    """Rename folders containing hyphens to use underscores.
+    """Fix folders containing hyphens: rename or merge into underscore variant.
 
     Walks bottom-up so child renames happen before parent renames.
-    Returns list of rename descriptions.
+    If the target already exists, merges the source into the target and
+    removes the source. Returns list of action descriptions.
     """
-    renames: list[str] = []
+    actions: list[str] = []
     if not root_dir.exists():
-        return renames
+        return actions
 
     # Collect all dirs with hyphens, deepest first
     hyphenated: list[Path] = []
@@ -182,15 +184,25 @@ def fix_folder_names(root_dir: Path, dry_run: bool) -> list[str]:
             continue
         new_path = folder.parent / fixed_name
         if new_path.exists():
-            renames.append(f"SKIP {folder} -> {fixed_name} (target exists)")
-            continue
-        if dry_run:
-            renames.append(f"Would rename: {folder} -> {fixed_name}")
-        else:
-            folder.rename(new_path)
-            renames.append(f"Renamed: {folder} -> {fixed_name}")
+            # Target exists — merge source into target, then delete source
+            merge_actions = merge_trees(new_path, folder, dry_run=dry_run)
+            for ma in merge_actions:
+                actions.append(f"  {fixed_name}/: {ma}")
+            if dry_run:
+                actions.append(f"Would merge & delete: {folder.name} -> {fixed_name}")
+            else:
+                import shutil
 
-    return renames
+                shutil.rmtree(folder)
+                actions.append(f"Merged & deleted: {folder.name} -> {fixed_name}")
+        else:
+            if dry_run:
+                actions.append(f"Would rename: {folder.name} -> {fixed_name}")
+            else:
+                folder.rename(new_path)
+                actions.append(f"Renamed: {folder.name} -> {fixed_name}")
+
+    return actions
 
 
 def load_schemas(schemas_dir: Path) -> dict[str, dict[str, Any]]:
