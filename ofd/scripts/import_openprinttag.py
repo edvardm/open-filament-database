@@ -1163,7 +1163,7 @@ class ImportOpenPrintTagScript(BaseScript):
             modifiers.append("gf")
 
         if modifiers:
-            filament_id = "_".join(modifiers) + "_" + type_lower
+            filament_id = type_lower + "_" + "_".join(modifiers)
         else:
             filament_id = type_lower
 
@@ -1927,14 +1927,20 @@ class ImportOpenPrintTagScript(BaseScript):
     ) -> list[tuple[str, str, str, str, str]]:
         """Check if any hierarchy entry duplicates existing on-disk data.
 
-        Two checks are performed for each hierarchy entry at
+        Three checks are performed for each hierarchy entry at
         ``{material_type}/{filament_id}/{color_id}``:
 
         1. **Forward**: splitting *color_id* into ``prefix + remainder``
            yields an existing ``{filament_id}_{prefix}/{remainder}`` path.
            Catches: ``abs/plus_black`` duplicating ``abs_plus/black``.
 
-        2. **Reverse**: the hierarchy *filament_id* is a longer form of an
+        2. **Word-swap**: the hierarchy *filament_id* contains the same
+           underscore-separated words as an existing on-disk filament but
+           in a different order.  All colours under the swapped name are
+           skipped to avoid creating a duplicate directory.
+           Catches: ``cf_pla`` duplicating ``pla_cf``.
+
+        3. **Reverse**: the hierarchy *filament_id* is a longer form of an
            existing on-disk filament (``filament_id = base + "_" + suffix``),
            and ``suffix + "_" + color_id`` exists as a variant under that
            base filament.
@@ -1991,6 +1997,32 @@ class ImportOpenPrintTagScript(BaseScript):
 
                     if found:
                         continue
+
+                    # Word-swap check: filament_id has the same words as
+                    # an existing on-disk filament but in a different order
+                    # (e.g. "cf_pla" vs "pla_cf").  Skip every colour
+                    # under the swapped name to avoid recreating a
+                    # duplicate directory.
+                    if material_type in existing_index:
+                        fil_parts = set(filament_id.split("_"))
+                        for existing_fil in existing_index[material_type]:
+                            if existing_fil == filament_id:
+                                continue
+                            if set(existing_fil.split("_")) == fil_parts:
+                                duplicates.append(
+                                    (
+                                        material_type,
+                                        filament_id,
+                                        color_id,
+                                        existing_fil,
+                                        color_id,
+                                    )
+                                )
+                                seen.add(key)
+                                found = True
+                                break
+                        if found:
+                            continue
 
                     # Reverse check: hierarchy filament_id is an oversplit
                     # of an existing on-disk filament.  Only check disk data
