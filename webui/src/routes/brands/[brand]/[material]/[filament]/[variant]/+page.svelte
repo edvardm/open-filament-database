@@ -166,7 +166,10 @@
 		try {
 			const newSlug = generateSlug(data.name);
 			const siblingVariants = await db.loadVariants(brandId, materialType, filamentId);
-			const dup = siblingVariants.find((v) => (v.slug ?? v.id).toLowerCase() === newSlug);
+			const dup = siblingVariants.find((v) =>
+				(v.slug ?? v.id).toLowerCase() === newSlug ||
+				v.name.toLowerCase() === data.name.trim().toLowerCase()
+			);
 			if (dup) {
 				duplicateVariantError = `Variant "${data.name}" already exists`;
 				entityState.creating = false;

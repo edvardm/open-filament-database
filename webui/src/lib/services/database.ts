@@ -8,6 +8,7 @@ import { submittedStore } from '$lib/stores/submitted';
 import { apiFetch } from '$lib/utils/api';
 import { parsePath } from '$lib/utils/changePaths';
 import { getDirectChildren } from '$lib/utils/changeTreeOps';
+import { generateSlug, generateMaterialType } from '$lib/services/entityService';
 
 /**
  * Service for indexing and managing the filament database
@@ -778,8 +779,7 @@ export class DatabaseService {
 	}
 
 	async createMaterial(brandId: string, material: Material): Promise<{ success: boolean; materialType?: string }> {
-		const materialType = material.materialType ||
-			material.material.toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '');
+		const materialType = material.materialType || generateMaterialType(material.material);
 		const data = { ...material, id: materialType, materialType };
 		return this._createEntity(
 			'material',
@@ -846,8 +846,7 @@ export class DatabaseService {
 	async createFilament(
 		brandId: string, materialType: string, filament: Filament
 	): Promise<{ success: boolean; filamentId?: string }> {
-		const filamentId = filament.slug || filament.id ||
-			filament.name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+		const filamentId = filament.slug || filament.id || generateSlug(filament.name);
 		const data = { ...filament, id: filamentId, slug: filamentId };
 		return this._createEntity(
 			'filament',
@@ -916,8 +915,7 @@ export class DatabaseService {
 	async createVariant(
 		brandId: string, materialType: string, filamentId: string, variant: Variant
 	): Promise<{ success: boolean; variantSlug?: string }> {
-		const variantSlug = variant.slug || variant.id ||
-			variant.name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+		const variantSlug = variant.slug || variant.id || generateSlug(variant.name);
 		const data = { ...variant, id: variantSlug, slug: variantSlug, filament_id: filamentId };
 		const basePath = `brands/${brandId}/materials/${materialType}/filaments/${filamentId}/variants`;
 		return this._createEntity(

@@ -3,10 +3,31 @@
  *
  * Handles recursive duplication of entities with their children,
  * and loading/pasting children from clipboard data.
+ *
+ * IMPORTANT: All field stripping goes through prepareEntityData()
+ * from clipboardService — the single source of truth for identity
+ * field removal. Never add manual `delete` statements here.
  */
 
 import { db } from '$lib/services/database';
+import { prepareEntityData } from '$lib/services/clipboardService';
 import type { Material, Filament, Variant } from '$lib/types/database';
+
+/**
+ * Strip identity fields and internal metadata from an entity for creation.
+ * Uses prepareEntityData as the single source of truth, then removes
+ * any internal metadata fields (prefixed with _).
+ */
+function prepareChildData(entityType: 'material' | 'filament' | 'variant', data: Record<string, any>): Record<string, any> {
+	const prepared = prepareEntityData(entityType, data);
+	// Remove internal metadata fields used for clipboard nesting
+	for (const key of Object.keys(prepared)) {
+		if (key.startsWith('_')) {
+			delete prepared[key];
+		}
+	}
+	return prepared;
+}
 
 // ============================================
 // Load children into nested structure (for copy)
@@ -19,7 +40,6 @@ export async function loadBrandChildren(brandId: string): Promise<Record<string,
 	const materials = await db.loadMaterials(brandId);
 	const result: Record<string, any[]> = { materials: JSON.parse(JSON.stringify(materials)) };
 
-	// For each material, load filaments and their variants
 	for (const material of materials) {
 		const matType = material.materialType ?? material.material?.toUpperCase();
 		if (!matType) continue;
@@ -80,31 +100,18 @@ export async function pasteBrandChildren(
 	const filaments = children.filaments ?? [];
 
 	for (const material of materials) {
-		const matData = { ...material };
-		delete matData.id;
-		delete matData.brandId;
+		const matData = prepareChildData('material', material);
 		const result = await db.createMaterial(targetBrandId, matData);
 
 		if (result.success && result.materialType) {
-			// Find filaments that belonged to this material
 			const matFilaments = filaments.filter((f: any) => f._parentMaterial === material.material);
 			for (const filament of matFilaments) {
-				const filData = { ...filament };
-				delete filData.id;
-				delete filData.slug;
-				delete filData.brandId;
-				delete filData.filamentDir;
-				const variants = filData._variants ?? [];
-				delete filData._parentMaterial;
-				delete filData._variants;
+				const variants = filament._variants ?? [];
+				const filData = prepareChildData('filament', filament);
 				const filResult = await db.createFilament(targetBrandId, result.materialType, filData);
 				if (filResult.success && filResult.filamentId) {
 					for (const variant of variants) {
-						const varData = { ...variant };
-						delete varData.id;
-						delete varData.slug;
-						delete varData.brandId;
-						delete varData.filamentDir;
+						const varData = prepareChildData('variant', variant);
 						varData.filament_id = filResult.filamentId;
 						await db.createVariant(targetBrandId, result.materialType, filResult.filamentId, varData);
 					}
@@ -125,22 +132,12 @@ export async function pasteMaterialChildren(
 	const filaments = children.filaments ?? [];
 
 	for (const filament of filaments) {
-		const filData = { ...filament };
-		delete filData.id;
-		delete filData.slug;
-		delete filData.brandId;
-		delete filData.filamentDir;
-		const variants = filData._variants ?? [];
-		delete filData._parentMaterial;
-		delete filData._variants;
+		const variants = filament._variants ?? [];
+		const filData = prepareChildData('filament', filament);
 		const result = await db.createFilament(targetBrandId, targetMaterialType, filData);
 		if (result.success && result.filamentId) {
 			for (const variant of variants) {
-				const varData = { ...variant };
-				delete varData.id;
-				delete varData.slug;
-				delete varData.brandId;
-				delete varData.filamentDir;
+				const varData = prepareChildData('variant', variant);
 				varData.filament_id = result.filamentId;
 				await db.createVariant(targetBrandId, targetMaterialType, result.filamentId, varData);
 			}
@@ -160,11 +157,7 @@ export async function pasteFilamentChildren(
 	const variants = children.variants ?? [];
 
 	for (const variant of variants) {
-		const varData = { ...variant };
-		delete varData.id;
-		delete varData.slug;
-		delete varData.brandId;
-		delete varData.filamentDir;
+		const varData = prepareChildData('variant', variant);
 		varData.filament_id = targetFilamentId;
 		await db.createVariant(targetBrandId, targetMaterialType, targetFilamentId, varData);
 	}
@@ -185,17 +178,13 @@ export async function duplicateBrandChildren(
 	const materials = await db.loadMaterials(sourceBrandId);
 
 	for (const material of materials) {
-		const matData = { ...JSON.parse(JSON.stringify(material)) };
-		delete matData.id;
-		delete matData.brandId;
+		const matData = prepareChildData('material', JSON.parse(JSON.stringify(material)));
 		const result = await db.createMaterial(targetBrandId, matData);
 		if (result.success && result.materialType && includeAll) {
 			const sourceMatType = material.materialType ?? material.material.toUpperCase();
 			await duplicateMaterialChildren(
-				sourceBrandId,
-				sourceMatType,
-				targetBrandId,
-				result.materialType,
+				sourceBrandId, sourceMatType,
+				targetBrandId, result.materialType,
 				true
 			);
 		}
@@ -215,21 +204,13 @@ export async function duplicateMaterialChildren(
 	const filaments = await db.loadFilaments(sourceBrandId, sourceMaterialType);
 
 	for (const filament of filaments) {
-		const filData = { ...JSON.parse(JSON.stringify(filament)) };
-		delete filData.id;
-		delete filData.slug;
-		delete filData.brandId;
-		delete filData.filamentDir;
+		const filData = prepareChildData('filament', JSON.parse(JSON.stringify(filament)));
 		const result = await db.createFilament(targetBrandId, targetMaterialType, filData);
 		if (result.success && result.filamentId && includeAll) {
 			const sourceFilId = filament.slug ?? filament.id;
 			await duplicateFilamentChildren(
-				sourceBrandId,
-				sourceMaterialType,
-				sourceFilId,
-				targetBrandId,
-				targetMaterialType,
-				result.filamentId
+				sourceBrandId, sourceMaterialType, sourceFilId,
+				targetBrandId, targetMaterialType, result.filamentId
 			);
 		}
 	}
@@ -249,11 +230,7 @@ export async function duplicateFilamentChildren(
 	const variants = await db.loadVariants(sourceBrandId, sourceMaterialType, sourceFilamentId);
 
 	for (const variant of variants) {
-		const varData = { ...JSON.parse(JSON.stringify(variant)) };
-		delete varData.id;
-		delete varData.slug;
-		delete varData.brandId;
-		delete varData.filamentDir;
+		const varData = prepareChildData('variant', JSON.parse(JSON.stringify(variant)));
 		varData.filament_id = targetFilamentId;
 		await db.createVariant(targetBrandId, targetMaterialType, targetFilamentId, varData);
 	}
