@@ -1962,8 +1962,7 @@ class ImportOpenPrintTagScript(BaseScript):
                     if color_id not in filaments[new_id]:
                         filaments[new_id][color_id] = color_data
                 renames.append(
-                    f"word_swap_rename: {material_type}/{old_id} -> "
-                    f"{material_type}/{new_id}"
+                    f"word_swap_rename: {material_type}/{old_id} -> {material_type}/{new_id}"
                 )
         return renames
 
