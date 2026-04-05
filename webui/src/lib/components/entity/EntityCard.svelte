@@ -53,6 +53,10 @@
 		localChangeType?: 'create' | 'update' | 'delete';
 		/** Whether any descendant entity has local changes */
 		hasDescendantChanges?: boolean;
+		/** Whether this entity has submitted (pending-merge) changes */
+		hasSubmittedChanges?: boolean;
+		/** The type of submitted change */
+		submittedChangeType?: 'create' | 'update' | 'delete';
 		/** Hover color variant */
 		hoverColor?: string;
 		/** Callbacks for context menu / dropdown actions */
@@ -81,6 +85,8 @@
 		hasLocalChanges = false,
 		localChangeType,
 		hasDescendantChanges = false,
+		hasSubmittedChanges = false,
+		submittedChangeType,
 		hoverColor,
 		onCopy,
 		onDuplicate,
@@ -170,6 +176,9 @@
 					return 'border-l-4 border-l-primary';
 			}
 		}
+		if (hasSubmittedChanges) {
+			return 'border-l-4 border-l-purple-500';
+		}
 		if (hasDescendantChanges) {
 			return 'border-l-4 border-l-blue-400/50';
 		}
@@ -203,6 +212,13 @@
 						title={localChangeType === 'create' ? 'Locally created' : localChangeType === 'update' ? 'Locally modified' : localChangeType === 'delete' ? 'Marked for deletion' : 'Has local changes'}
 					>
 						{localChangeType === 'create' ? 'New' : localChangeType === 'update' ? 'Modified' : localChangeType === 'delete' ? 'Deleted' : 'Changed'}
+					</span>
+				{:else if hasSubmittedChanges}
+					<span
+						class="shrink-0 px-1.5 py-0.5 text-xs rounded bg-purple-500/20 text-purple-700 dark:text-purple-400"
+						title="Submitted - awaiting merge"
+					>
+						Submitted
 					</span>
 				{:else if hasDescendantChanges}
 					<span

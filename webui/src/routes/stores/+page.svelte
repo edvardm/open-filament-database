@@ -13,6 +13,7 @@
 	import { saveLogoImage } from '$lib/utils/logoManagement';
 	import { useChangeTracking } from '$lib/stores/environment';
 	import { changes } from '$lib/stores/changes';
+	import { submittedStore } from '$lib/stores/submitted';
 	import { withDeletedStubs, getChildChangeProps } from '$lib/utils/deletedStubs';
 	import { BackButton } from '$lib/components';
 	import { fetchEntitySchema } from '$lib/services/schemaService';
@@ -27,6 +28,7 @@
 
 	let displayStores = $derived.by(() => withDeletedStubs({
 		changes: $changes,
+		submitted: submittedStore,
 		useChangeTracking: $useChangeTracking,
 		rootNamespace: 'stores',
 		items: stores,
@@ -229,7 +231,7 @@
 			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 				{#each filteredStores as store}
 					{@const storePath = `stores/${store.slug ?? store.id}`}
-					{@const changeProps = getChildChangeProps($changes, $useChangeTracking, storePath)}
+					{@const changeProps = getChildChangeProps($changes, $useChangeTracking, storePath, submittedStore)}
 					<EntityCard
 						entity={store}
 						href="/stores/{store.slug ?? store.id}"
@@ -247,6 +249,8 @@
 						]}
 						hasLocalChanges={changeProps.hasLocalChanges}
 						localChangeType={changeProps.localChangeType}
+						hasSubmittedChanges={changeProps.hasSubmittedChanges}
+						submittedChangeType={changeProps.submittedChangeType}
 						entityType="store"
 						onCopy={() => storeCopy.request(store, `stores/${store.slug ?? store.id}`)}
 						onDuplicate={() => storeDuplicate.request(store)}

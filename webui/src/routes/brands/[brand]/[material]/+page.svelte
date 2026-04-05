@@ -17,6 +17,7 @@
 	import { untrack } from 'svelte';
 	import { useChangeTracking } from '$lib/stores/environment';
 	import { changes } from '$lib/stores/changes';
+	import { submittedStore } from '$lib/stores/submitted';
 	import { withDeletedStubs, getChildChangeProps } from '$lib/utils/deletedStubs';
 	import { getClipboard } from '$lib/services/clipboardService';
 
@@ -37,6 +38,7 @@
 
 	let displayFilaments = $derived.by(() => withDeletedStubs({
 		changes: $changes,
+		submitted: submittedStore,
 		useChangeTracking: $useChangeTracking,
 		parentPath: `brands/${brandId}/materials/${materialType}`,
 		namespace: 'filaments',
@@ -310,6 +312,8 @@
 
 			{#if entityState.hasLocalChanges}
 				<MessageBanner type="info" message="Local changes - export to save" />
+			{:else if entityState.hasSubmittedChanges}
+				<MessageBanner type="info" message="Submitted - awaiting merge" />
 			{/if}
 			{#if messageHandler.message}
 				<MessageBanner type={messageHandler.type} message={messageHandler.message} />
@@ -350,11 +354,12 @@
 					{#each filteredFilaments as filament}
 						{@const filamentHref = `/brands/${brandId}/${materialType}/${filament.slug ?? filament.id}`}
 						{@const filamentPath = `brands/${brandId}/materials/${materialType}/filaments/${filament.slug ?? filament.id}`}
-						{@const changeProps = getChildChangeProps($changes, $useChangeTracking, filamentPath)}
+						{@const changeProps = getChildChangeProps($changes, $useChangeTracking, filamentPath, submittedStore)}
 						<EntityCard entity={filament} href={filamentHref} name={filament.name}
 							id={filament.slug ?? filament.id} hoverColor="blue" showLogo={false}
 							badge={filament.discontinued ? { text: 'Discontinued', color: 'red' } : undefined}
 							hasLocalChanges={changeProps.hasLocalChanges} localChangeType={changeProps.localChangeType}
+							hasSubmittedChanges={changeProps.hasSubmittedChanges} submittedChangeType={changeProps.submittedChangeType}
 							entityType="filament"
 							onCopy={() => filamentCopy.request(filament, filamentPath)}
 							onDuplicate={() => filamentDuplicate.request(filament)}

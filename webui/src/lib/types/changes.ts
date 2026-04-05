@@ -90,6 +90,29 @@ export interface ImageReference {
 /**
  * Export format for changes
  */
+/**
+ * A single submitted (PR-created) change set, preserved for visual overlay
+ * until the entry expires (TTL-based).
+ */
+export interface SubmittedEntry {
+	uuid: string;
+	prUrl: string;
+	prNumber: number;
+	submittedAt: string;
+	expiresAt: string;
+	changes: EntityChange[];
+	/** Denormalized entity paths for O(1) lookup */
+	paths: string[];
+}
+
+/**
+ * Collection of all submitted change buffers, keyed by UUID.
+ */
+export interface SubmittedBuffer {
+	entries: Record<string, SubmittedEntry>;
+	version: 1;
+}
+
 export interface ChangeExport {
 	/** Metadata about the export */
 	metadata: {

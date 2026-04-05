@@ -213,6 +213,8 @@
 
 			{#if entityState.hasLocalChanges}
 				<MessageBanner type="info" message="Local changes - export to save" />
+			{:else if entityState.hasSubmittedChanges}
+				<MessageBanner type="info" message="Submitted - awaiting merge" />
 			{/if}
 
 			{#if messageHandler.message}

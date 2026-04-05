@@ -193,6 +193,20 @@ const SUPPLEMENTARY_KEYS: Partial<Record<EntityType, string[]>> = {
 
 **Warning:** If you add a field to entity data that needs to survive change tracking but isn't in the JSON schema, you MUST add it to `SUPPLEMENTARY_KEYS` or it will be silently stripped.
 
+### Submitted Changes Buffer (Pending Merge)
+
+When a user submits changes (creating a PR), the changes are archived into a **submitted buffer** (`webui/src/lib/stores/submitted.ts`) before being cleared from the pending change store. This keeps submitted entities visible in the UI with a purple "Submitted" badge until the buffer entries expire (7-day TTL).
+
+**Key files:**
+- `webui/src/lib/stores/submitted.ts` - Submitted store (localStorage-backed, key `ofd_submitted_changes`)
+- `webui/src/lib/types/changes.ts` - `SubmittedEntry` and `SubmittedBuffer` types
+
+**Data layering precedence:** pending changes > submitted changes > API data. The `DatabaseService` applies submitted changes via `layerSubmittedChanges()` before `layerChanges()`.
+
+**Visual indicators:** Submitted entities show `border-l-4 border-l-purple-500` border and a purple "Submitted" badge on EntityCards. Detail pages show a "Submitted - awaiting merge" info banner.
+
+**Integration points:** The `getChildChangeProps()` function in `deletedStubs.ts` accepts an optional `submitted` parameter. All list pages pass `submittedStore` to this function and to `withDeletedStubs()`. The `entityState` composable exposes `hasSubmittedChanges` for detail pages.
+
 ### Entity Detail Page Structure
 
 Each entity detail page follows this pattern:

@@ -4,6 +4,7 @@ import type { TreeChangeSet } from '$lib/types/changeTree';
 import { get } from 'svelte/store';
 import { useChangeTracking } from '$lib/stores/environment';
 import { changeStore } from '$lib/stores/changes';
+import { submittedStore } from '$lib/stores/submitted';
 import { apiFetch } from '$lib/utils/api';
 import { parsePath } from '$lib/utils/changePaths';
 import { getDirectChildren } from '$lib/utils/changeTreeOps';
@@ -134,6 +135,78 @@ export class DatabaseService {
 	}
 
 	/**
+	 * Layer submitted (pending-merge) changes over base data.
+	 * Same logic as layerChanges but reads from the submitted store.
+	 */
+	private layerSubmittedChanges<T>(
+		baseData: T[],
+		entityPathPrefix: string,
+		idKey: keyof T = 'id' as keyof T
+	): T[] {
+		if (!get(useChangeTracking)) {
+			return baseData;
+		}
+
+		const childChanges = submittedStore.getDirectChildChanges(entityPathPrefix);
+		if (childChanges.length === 0) return baseData;
+
+		const getId = (item: any): string =>
+			String(item[idKey] ?? item['id'] ?? '');
+
+		const result = new Map<string, T>();
+		for (const item of baseData) {
+			result.set(getId(item), item);
+		}
+
+		const lowerKeyIndex = new Map<string, string>();
+		for (const key of result.keys()) {
+			lowerKeyIndex.set(key.toLowerCase(), key);
+		}
+
+		for (const { entityId, change } of childChanges) {
+			switch (change.operation) {
+				case 'create':
+					if (change.data) {
+						const newKey = getId(change.data);
+						if (!result.has(newKey) && !lowerKeyIndex.has(newKey.toLowerCase())) {
+							result.set(newKey, change.data);
+							lowerKeyIndex.set(newKey.toLowerCase(), newKey);
+						}
+					}
+					break;
+
+				case 'update':
+					if (change.data) {
+						const dataId = getId(change.data);
+						let oldKey = lowerKeyIndex.get(entityId.toLowerCase());
+						if (!oldKey && change.originalData) {
+							const origId = getId(change.originalData);
+							oldKey = lowerKeyIndex.get(origId.toLowerCase());
+						}
+						if (oldKey && oldKey !== dataId) {
+							result.delete(oldKey);
+							lowerKeyIndex.delete(oldKey.toLowerCase());
+						}
+						result.set(dataId, change.data);
+						lowerKeyIndex.set(dataId.toLowerCase(), dataId);
+					}
+					break;
+
+				case 'delete': {
+					const keyToDelete = lowerKeyIndex.get(entityId.toLowerCase());
+					if (keyToDelete) {
+						result.delete(keyToDelete);
+						lowerKeyIndex.delete(entityId.toLowerCase());
+					}
+					break;
+				}
+			}
+		}
+
+		return Array.from(result.values());
+	}
+
+	/**
 	 * Get a single entity with changes applied
 	 */
 	private getEntityWithChanges<T>(baseData: T | null, entityPath: string): T | null {
@@ -144,19 +217,29 @@ export class DatabaseService {
 		const changeSet = get(changeStore);
 		const change = changeSet._index.get(entityPath)?.change;
 
-		if (!change) {
-			return baseData;
+		if (change) {
+			switch (change.operation) {
+				case 'delete':
+					return null;
+				case 'create':
+				case 'update':
+					return change.data || baseData;
+			}
 		}
 
-		switch (change.operation) {
-			case 'delete':
-				return null;
-			case 'create':
-			case 'update':
-				return change.data || baseData;
-			default:
-				return baseData;
+		// Check submitted store (lower priority than pending changes)
+		const submitted = submittedStore.getChange(entityPath);
+		if (submitted) {
+			switch (submitted.change.operation) {
+				case 'delete':
+					return null;
+				case 'create':
+				case 'update':
+					return submitted.change.data || baseData;
+			}
 		}
+
+		return baseData;
 	}
 
 	/**
@@ -227,7 +310,8 @@ export class DatabaseService {
 			}
 		}
 
-		return this.layerChanges(baseItems, changePrefix, idKey);
+		const withSubmitted = this.layerSubmittedChanges(baseItems, changePrefix, idKey);
+		return this.layerChanges(withSubmitted, changePrefix, idKey);
 	}
 
 	/**
@@ -245,6 +329,11 @@ export class DatabaseService {
 
 			if (change?.operation === 'create') return change.data || null;
 			if (change?.operation === 'delete') return null;
+
+			// Check submitted store for creates/deletes
+			const submitted = submittedStore.getChange(entityPath);
+			if (submitted?.change.operation === 'create') return submitted.change.data || null;
+			if (submitted?.change.operation === 'delete') return null;
 
 			// Skip API if any ancestor is a local create
 			if (this.isLocalCreate(entityPath)) return null;

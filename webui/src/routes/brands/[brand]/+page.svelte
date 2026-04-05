@@ -17,6 +17,7 @@
 	import { fetchEntitySchema } from '$lib/services/schemaService';
 	import { untrack } from 'svelte';
 	import { changes } from '$lib/stores/changes';
+	import { submittedStore } from '$lib/stores/submitted';
 	import { useChangeTracking } from '$lib/stores/environment';
 	import { withDeletedStubs, getChildChangeProps } from '$lib/utils/deletedStubs';
 	import { getCountryName } from '$lib/data/countryCodes';
@@ -41,6 +42,7 @@
 
 	let displayMaterials = $derived.by(() => withDeletedStubs({
 		changes: $changes,
+		submitted: submittedStore,
 		useChangeTracking: $useChangeTracking,
 		parentPath: `brands/${brandId}`,
 		namespace: 'materials',
@@ -370,6 +372,8 @@
 
 			{#if entityState.hasLocalChanges}
 				<MessageBanner type="info" message="Local changes - export to save" />
+			{:else if entityState.hasSubmittedChanges}
+				<MessageBanner type="info" message="Submitted - awaiting merge" />
 			{/if}
 
 			{#if messageHandler.message}
@@ -421,7 +425,7 @@
 					{#each filteredMaterials as material}
 						{@const materialHref = `/brands/${brandData.slug ?? brandData.id}/${material.materialType ?? material.material.toLowerCase()}`}
 						{@const materialPath = `brands/${brandId}/materials/${material.materialType ?? material.material.toLowerCase()}`}
-						{@const changeProps = getChildChangeProps($changes, $useChangeTracking, materialPath)}
+						{@const changeProps = getChildChangeProps($changes, $useChangeTracking, materialPath, submittedStore)}
 						<EntityCard
 							entity={material}
 							href={materialHref}
@@ -431,6 +435,8 @@
 							showLogo={false}
 							hasLocalChanges={changeProps.hasLocalChanges}
 							localChangeType={changeProps.localChangeType}
+							hasSubmittedChanges={changeProps.hasSubmittedChanges}
+							submittedChangeType={changeProps.submittedChangeType}
 							entityType="material"
 							onCopy={() => materialCopy.request(material, materialPath)}
 							onDuplicate={() => materialDuplicate.request(material)}

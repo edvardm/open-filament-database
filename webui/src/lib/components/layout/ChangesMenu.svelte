@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { changeStore, changeCount, hasChanges, changesList } from '$lib/stores/changes';
+	import { submittedStore, submittedCount, hasSubmitted } from '$lib/stores/submitted';
 	import { isCloudMode, isLocalMode } from '$lib/stores/environment';
 	import type { EntityChange } from '$lib/types/changes';
 	import type { Store } from '$lib/types/database';
@@ -9,6 +10,7 @@
 	import { db } from '$lib/services/database';
 	import { generateChangeTitle } from '$lib/utils/changeTitleGenerator';
 	import { authStore } from '$lib/stores/auth';
+	import { userPrefs } from '$lib/stores/userPrefs';
 	import { STORAGE_KEY_REOPEN_WIZARD } from '$lib/config/storageKeys';
 	import { onMount, onDestroy } from 'svelte';
 
@@ -413,6 +415,13 @@
 		const result = await response.json();
 
 		if (result.success) {
+			submittedStore.archive({
+				uuid: result.uuid!,
+				prUrl: result.prUrl || '',
+				prNumber: result.prNumber || 0,
+				changes: exportData.changes
+			});
+			userPrefs.addSubmission(result.uuid!, result.prUrl || '', result.prNumber || 0);
 			changeStore.clear();
 			return {
 				success: true,
@@ -455,6 +464,14 @@
 		const result = await response.json();
 
 		if (result.success) {
+			const uuid = result.uuid || crypto.randomUUID();
+			submittedStore.archive({
+				uuid,
+				prUrl: result.prUrl || '',
+				prNumber: result.prNumber || 0,
+				changes: exportData.changes
+			});
+			userPrefs.addSubmission(uuid, result.prUrl || '', result.prNumber || 0);
 			changeStore.clear();
 			return {
 				success: true,
@@ -515,7 +532,7 @@
 		onclick={toggleMenu}
 		variant="ghost"
 		size="sm"
-		title={$hasChanges ? `${$changeCount} pending changes` : 'No pending changes'}
+		title={$hasChanges ? `${$changeCount} pending changes` : $hasSubmitted ? `${$submittedCount} submitted changes` : 'No pending changes'}
 	>
 		<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
 			<path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
@@ -525,6 +542,10 @@
 		{#if $hasChanges}
 			<span class="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-xs font-medium text-white">
 				{$changeCount}
+			</span>
+		{:else if $hasSubmitted}
+			<span class="flex h-5 min-w-5 items-center justify-center rounded-full bg-purple-500 px-1 text-xs font-medium text-white">
+				{$submittedCount}
 			</span>
 		{/if}
 	</Button>
@@ -641,6 +662,42 @@
 					</div>
 				{/if}
 			</div>
+
+			<!-- Submitted changes section -->
+			{#if $hasSubmitted}
+				<div class="border-t">
+					<div class="flex items-center justify-between bg-purple-500/5 px-4 py-2">
+						<h4 class="text-xs font-semibold text-purple-700 dark:text-purple-400">
+							Submitted ({$submittedCount} {$submittedCount === 1 ? 'change' : 'changes'} awaiting merge)
+						</h4>
+					</div>
+					<div class="max-h-48 divide-y overflow-y-auto">
+						{#each submittedStore.getEntries() as entry}
+							<div class="px-4 py-3 opacity-75">
+								<div class="flex items-center justify-between">
+									<div class="flex items-center gap-2">
+										<span class="rounded bg-purple-500/20 px-1.5 py-0.5 text-xs font-medium text-purple-700 dark:text-purple-400">
+											PR #{entry.prNumber}
+										</span>
+										<span class="text-xs text-muted-foreground">
+											{formatTimestamp(new Date(entry.submittedAt).getTime())}
+										</span>
+									</div>
+									{#if entry.prUrl}
+										<a href={entry.prUrl} target="_blank" rel="noopener noreferrer"
+											class="text-xs text-primary hover:underline">
+											View PR
+										</a>
+									{/if}
+								</div>
+								<p class="mt-1 text-xs text-muted-foreground">
+									{entry.changes.length} {entry.changes.length === 1 ? 'change' : 'changes'}
+								</p>
+							</div>
+						{/each}
+					</div>
+				</div>
+			{/if}
 
 			<!-- Footer actions -->
 			{#if $hasChanges}

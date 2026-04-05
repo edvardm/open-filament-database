@@ -9,6 +9,7 @@
 
 import { get } from 'svelte/store';
 import { changeStore } from '$lib/stores/changes';
+import { submittedStore } from '$lib/stores/submitted';
 import { useChangeTracking } from '$lib/stores/environment';
 import { hasDescendantChanges as treeHasDescendantChanges } from '$lib/utils/changeTreeOps';
 
@@ -60,6 +61,7 @@ export function createEntityState(config: EntityStateConfig) {
 	// Bridge Svelte 4 stores into Svelte 5 reactivity
 	let changeSet = $state(get(changeStore));
 	let trackingEnabled = $state(get(useChangeTracking));
+	let submittedVersion = $state(0);
 
 	$effect(() => {
 		const unsub = changeStore.subscribe((v) => {
@@ -71,6 +73,13 @@ export function createEntityState(config: EntityStateConfig) {
 	$effect(() => {
 		const unsub = useChangeTracking.subscribe((v) => {
 			trackingEnabled = v;
+		});
+		return unsub;
+	});
+
+	$effect(() => {
+		const unsub = submittedStore.subscribe(() => {
+			submittedVersion++;
 		});
 		return unsub;
 	});
@@ -100,6 +109,16 @@ export function createEntityState(config: EntityStateConfig) {
 		const node = changeSet._index.get(path);
 		if (!node) return false;
 		return treeHasDescendantChanges(node);
+	});
+
+	// Check if entity has submitted (pending-merge) changes
+	const hasSubmittedChanges = $derived.by(() => {
+		if (!trackingEnabled) return false;
+		// Access submittedVersion to trigger reactivity on store changes
+		void submittedVersion;
+		const path = config.getEntityPath();
+		if (!path) return false;
+		return submittedStore.has(path);
 	});
 
 	// Check if entity was locally created (for delete modal messaging)
@@ -176,6 +195,9 @@ export function createEntityState(config: EntityStateConfig) {
 		},
 		get hasDescendantChanges() {
 			return hasDescendantChanges;
+		},
+		get hasSubmittedChanges() {
+			return hasSubmittedChanges;
 		},
 
 		// Duplicate/Paste/Compare modal states

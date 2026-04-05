@@ -15,6 +15,7 @@
 	import { untrack } from 'svelte';
 	import { useChangeTracking } from '$lib/stores/environment';
 	import { changes } from '$lib/stores/changes';
+	import { submittedStore } from '$lib/stores/submitted';
 	import { withDeletedStubs, getChildChangeProps } from '$lib/utils/deletedStubs';
 	import { getClipboard } from '$lib/services/clipboardService';
 	import { duplicateFilamentChildren, loadFilamentChildren, pasteFilamentChildren } from '$lib/services/duplicateService';
@@ -35,6 +36,7 @@
 
 	let displayVariants = $derived.by(() => withDeletedStubs({
 		changes: $changes,
+		submitted: submittedStore,
 		useChangeTracking: $useChangeTracking,
 		parentPath: `brands/${brandId}/materials/${materialType}/filaments/${filamentId}`,
 		namespace: 'variants',
@@ -293,6 +295,8 @@
 
 			{#if entityState.hasLocalChanges}
 				<MessageBanner type="info" message="Local changes - export to save" />
+			{:else if entityState.hasSubmittedChanges}
+				<MessageBanner type="info" message="Submitted - awaiting merge" />
 			{/if}
 			{#if messageHandler.message}
 				<MessageBanner type={messageHandler.type} message={messageHandler.message} />
@@ -343,7 +347,7 @@
 					childEntityType="variant" onPaste={variantPaste}>
 					{#each filteredVariants as variant}
 						{@const variantPath = `brands/${brandId}/materials/${materialType}/filaments/${filamentId}/variants/${variant.slug ?? variant.id}`}
-						{@const changeProps = getChildChangeProps($changes, $useChangeTracking, variantPath)}
+						{@const changeProps = getChildChangeProps($changes, $useChangeTracking, variantPath, submittedStore)}
 						{@const sizesCount = variant.sizes?.length ?? 0}
 						{@const sizesInfo = sizesCount > 0 ? `${sizesCount} size${sizesCount !== 1 ? 's' : ''}` : undefined}
 						<EntityCard entity={variant} name={variant.name} id={variant.slug}
@@ -352,6 +356,7 @@
 							badge={variant.discontinued ? { text: 'Discontinued', color: 'red' } : undefined}
 							secondaryInfo={sizesInfo}
 							hasLocalChanges={changeProps.hasLocalChanges} localChangeType={changeProps.localChangeType}
+							hasSubmittedChanges={changeProps.hasSubmittedChanges} submittedChangeType={changeProps.submittedChangeType}
 							entityType="variant"
 							onCopy={() => variantCopy.request(variant, variantPath)}
 							onDuplicate={() => variantDuplicate.request(variant)}

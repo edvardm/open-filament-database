@@ -1,4 +1,5 @@
 import type { EntityChange, ChangeOperation } from '$lib/types/changes';
+import type { submittedStore as SubmittedStoreType } from '$lib/stores/submitted';
 
 /**
  * Interface matching the shape of the $changes derived store.
@@ -15,6 +16,12 @@ interface ChangesStore {
 	): Array<{ id: string; change: EntityChange }>;
 }
 
+/** Interface matching the submitted store's lookup methods. */
+export type SubmittedLookup = Pick<
+	typeof SubmittedStoreType,
+	'has' | 'getChange' | 'hasDescendantChanges' | 'getDirectChildChanges'
+>;
+
 type DeletedChanges = Array<{ id: string; change: EntityChange }>;
 
 /**
@@ -25,6 +32,8 @@ type DeletedChanges = Array<{ id: string; change: EntityChange }>;
  * minimal stub objects so they still appear in the UI (with a "Deleted"
  * badge via EntityCard).
  *
+ * Also handles submitted deletes (pending-merge) so they remain visible.
+ *
  * For child entities, pass `parentPath` + `namespace`.
  * For root entities (brands/stores), pass `rootNamespace`.
  *
@@ -32,6 +41,7 @@ type DeletedChanges = Array<{ id: string; change: EntityChange }>;
  */
 export function withDeletedStubs<T>(config: {
 	changes: ChangesStore;
+	submitted?: SubmittedLookup;
 	useChangeTracking: boolean;
 	items: T[];
 	getKeys: (item: T) => (string | null | undefined)[];
@@ -40,7 +50,7 @@ export function withDeletedStubs<T>(config: {
 	| { parentPath: string; namespace: string; rootNamespace?: never }
 	| { rootNamespace: 'brands' | 'stores'; parentPath?: never; namespace?: never }
 )): T[] {
-	const { changes, useChangeTracking, items, getKeys, buildStub } = config;
+	const { changes, submitted, useChangeTracking, items, getKeys, buildStub } = config;
 
 	if (!useChangeTracking) return items;
 
@@ -51,6 +61,22 @@ export function withDeletedStubs<T>(config: {
 	} else {
 		deletedChanges = changes.getChildChanges(config.parentPath, config.namespace)
 			.filter((c) => c.change.operation === 'delete');
+	}
+
+	// Also include submitted deletes
+	if (submitted) {
+		const prefix = config.rootNamespace
+			? `${config.rootNamespace}/`
+			: `${config.parentPath}/${config.namespace}/`;
+		const submittedDeletes = submitted.getDirectChildChanges(prefix)
+			.filter((c) => c.change.operation === 'delete');
+		// Avoid duplicates with pending deletes
+		const pendingIds = new Set(deletedChanges.map((c) => c.id.toLowerCase()));
+		for (const sc of submittedDeletes) {
+			if (!pendingIds.has(sc.entityId.toLowerCase())) {
+				deletedChanges.push({ id: sc.entityId, change: sc.change });
+			}
+		}
 	}
 
 	if (deletedChanges.length === 0) return items;
@@ -82,12 +108,16 @@ export interface ChangeProps {
 	hasLocalChanges: boolean;
 	localChangeType: ChangeOperation | undefined;
 	hasDescendantChanges: boolean;
+	hasSubmittedChanges: boolean;
+	submittedChangeType: ChangeOperation | undefined;
 }
 
 const NO_CHANGES: ChangeProps = {
 	hasLocalChanges: false,
 	localChangeType: undefined,
-	hasDescendantChanges: false
+	hasDescendantChanges: false,
+	hasSubmittedChanges: false,
+	submittedChangeType: undefined
 };
 
 /**
@@ -96,14 +126,19 @@ const NO_CHANGES: ChangeProps = {
 export function getChildChangeProps(
 	changes: ChangesStore,
 	useChangeTracking: boolean,
-	entityPath: string
+	entityPath: string,
+	submitted?: SubmittedLookup
 ): ChangeProps {
 	if (!useChangeTracking) return NO_CHANGES;
 
 	const change = changes.get(entityPath);
+	const sub = submitted?.getChange(entityPath);
+
 	return {
 		hasLocalChanges: !!change,
 		localChangeType: change?.operation,
-		hasDescendantChanges: changes.hasDescendantChanges(entityPath)
+		hasDescendantChanges: changes.hasDescendantChanges(entityPath),
+		hasSubmittedChanges: !!sub,
+		submittedChangeType: sub?.change.operation
 	};
 }
