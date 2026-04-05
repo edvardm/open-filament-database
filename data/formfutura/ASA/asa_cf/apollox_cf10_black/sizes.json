@@ -54,5 +54,9 @@
         "url": "https://www.formfutura.com/apollox-cf10"
       }
     ]
+  },
+  {
+    "filament_weight": 1000,
+    "diameter": 1.75
   }
 ]
