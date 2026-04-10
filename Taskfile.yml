@@ -1,0 +1,133 @@
+version: "3"
+
+vars:
+  WEBUI_DIR: webui
+  NPM:
+    sh: command -v bun >/dev/null 2>&1 && echo bun || echo npm
+
+tasks:
+  # ── Setup ────────────────────────────────────────────────────────────────
+
+  setup:
+    desc: Install Python dependencies via uv sync
+    cmds:
+      - uv sync --frozen
+    sources:
+      - pyproject.toml
+      - uv.lock
+    generates:
+      - .venv/pyvenv.cfg
+
+  setup-webui:
+    desc: Install WebUI Node.js dependencies via {{.NPM}}
+    dir: "{{.WEBUI_DIR}}"
+    cmds:
+      - "{{.NPM}} install --frozen-lockfile"
+    sources:
+      - package-lock.json
+    generates:
+      - node_modules/.package-lock.json
+
+  # ── Python CLI ───────────────────────────────────────────────────────────
+
+  validate:
+    desc: Validate all data (folder names, JSON files, store IDs, logos, GTIN)
+    deps: [setup]
+    cmds:
+      - uv run -m ofd validate {{.CLI_ARGS}}
+
+  build:
+    desc: Build all exports (JSON, SQLite, CSV, API)
+    deps: [setup]
+    cmds:
+      - uv run -m ofd build {{.CLI_ARGS}}
+
+  serve:
+    desc: Start the OFD dev server on port 8000
+    deps: [setup]
+    cmds:
+      - uv run -m ofd serve {{.CLI_ARGS}}
+
+  style:
+    desc: Sort and normalise all JSON data files
+    deps: [setup]
+    cmds:
+      - uv run -m ofd script style_data {{.CLI_ARGS}}
+
+  script:
+    desc: Run a utility script (use CLI_ARGS to pass the script name and flags)
+    deps: [setup]
+    cmds:
+      - uv run -m ofd script {{.CLI_ARGS}}
+
+  # ── WebUI ────────────────────────────────────────────────────────────────
+
+  webui:
+    desc: Start the WebUI dev server (http://localhost:5173)
+    deps: [setup-webui]
+    dir: "{{.WEBUI_DIR}}"
+    cmds:
+      - "{{.NPM}} run dev"
+
+  webui-build:
+    desc: Build the WebUI for production
+    deps: [setup-webui]
+    dir: "{{.WEBUI_DIR}}"
+    cmds:
+      - "{{.NPM}} run build"
+
+  webui-check:
+    desc: Type-check the WebUI (known ~103 non-blocking errors)
+    deps: [setup-webui]
+    dir: "{{.WEBUI_DIR}}"
+    cmds:
+      - "{{.NPM}} run check"
+
+  webui-test:
+    desc: Run Playwright tests against the WebUI (requires prior npm run test:install)
+    deps: [setup-webui]
+    dir: "{{.WEBUI_DIR}}"
+    cmds:
+      - "{{.NPM}} run test"
+
+  # ── Code quality ─────────────────────────────────────────────────────────
+
+  lint:
+    desc: Lint Python code with ruff
+    deps: [setup]
+    cmds:
+      - uv run ruff check .
+
+  lint-fix:
+    desc: Lint and auto-fix Python code with ruff
+    deps: [setup]
+    cmds:
+      - uv run ruff check --fix .
+
+  format:
+    desc: Format Python code with ruff
+    deps: [setup]
+    cmds:
+      - uv run ruff format .
+
+  test:
+    desc: Run Python test suite with pytest
+    deps: [setup]
+    cmds:
+      - uv run pytest {{.CLI_ARGS}}
+
+  requirements:
+    desc: Regenerate requirements.txt from uv.lock (for pip users)
+    deps: [setup]
+    cmds:
+      - uv export --no-hashes -o requirements.txt
+
+  # ── Compound ─────────────────────────────────────────────────────────────
+
+  check:
+    desc: Lint, format-check, and test (CI equivalent)
+    deps: [setup]
+    cmds:
+      - uv run ruff check .
+      - uv run ruff format --check .
+      - uv run pytest
