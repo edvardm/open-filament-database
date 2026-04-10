@@ -53,9 +53,6 @@ Documentation = "https://api.openfilamentdatabase.org/"
 Repository = "https://github.com/OpenFilamentCollective/open-filament-database"
 Issues = "https://github.com/OpenFilamentCollective/open-filament-database/issues"
 
-[tool.uv]
-package = false
-
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
