@@ -62,6 +62,10 @@ export function createEntityState(config: EntityStateConfig) {
 	let changeSet = $state(get(changeStore));
 	let trackingEnabled = $state(get(useChangeTracking));
 	let submittedVersion = $state(0);
+	// Plain counter — incrementing inside the subscribe callback must not read
+	// the reactive `submittedVersion` (that would be a read-then-write inside the
+	// $effect, causing Svelte to re-schedule itself infinitely).
+	let submittedVersionCounter = 0;
 
 	$effect(() => {
 		const unsub = changeStore.subscribe((v) => {
@@ -79,7 +83,7 @@ export function createEntityState(config: EntityStateConfig) {
 
 	$effect(() => {
 		const unsub = submittedStore.subscribe(() => {
-			submittedVersion++;
+			submittedVersion = ++submittedVersionCounter;
 		});
 		return unsub;
 	});
