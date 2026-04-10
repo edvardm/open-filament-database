@@ -10,9 +10,9 @@
   "data_sheet_url": "https://primacreator.com/products/primavalue-pla?variant=48794154467675",
   "slicer_settings": {
     "generic": {
+      "bed_temp": 75,
       "first_layer_bed_temp": 80,
       "first_layer_nozzle_temp": 225,
-      "bed_temp": 75,
       "nozzle_temp": 215
     }
   }
