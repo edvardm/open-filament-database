@@ -1,5 +1,10 @@
 version: "3"
 
+includes:
+  local:
+    taskfile: local/Taskfile.yml
+    optional: true  # not checked in; create local/Taskfile.yml for personal tasks
+
 vars:
   WEBUI_DIR: webui
 
@@ -152,7 +157,7 @@ tasks:
 
   pr-notifs:
     desc: Show unread notifications in upstream repo where you're participating
-    cmd: gh search prs --repo OpenFilamentCollective/open-filament-database --involves @me --state open
+    cmd: gh notify -p -f OpenFilamentCollective/open-filament-database
 
   # ── Compound ─────────────────────────────────────────────────────────────
 

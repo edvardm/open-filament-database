@@ -10,3 +10,4 @@ dist/
 .task/
 htmlcov/
 .coverage
+local/
