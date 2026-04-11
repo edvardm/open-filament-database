@@ -133,9 +133,8 @@ tasks:
 
   test-all:
     desc: Run all tests (Python + WebUI)
-    deps: [.setup-python, .install-playwright]
+    deps: [test, .install-playwright]
     cmds:
-      - uv run pytest --durations 3 --ff {{.CLI_ARGS}}
       - npm --prefix {{.WEBUI_DIR}} run test
 
   requirements:
