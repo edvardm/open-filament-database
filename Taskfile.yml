@@ -32,11 +32,11 @@ tasks:
 
   .setup-webui:
     cmds:
-      - pnpm --dir {{.WEBUI_DIR}} install --frozen-lockfile
+      - npm --prefix {{.WEBUI_DIR}} ci
       - touch {{.WEBUI_DIR}}/node_modules/.webui-installed
     sources:
       - "{{.WEBUI_DIR}}/package.json"
-      - "{{.WEBUI_DIR}}/pnpm-lock.yaml"
+      - "{{.WEBUI_DIR}}/package-lock.json"
     generates:
       - "{{.WEBUI_DIR}}/node_modules/.webui-installed"
 
@@ -45,7 +45,7 @@ tasks:
     dir: "{{.WEBUI_DIR}}"
     status:
       - test -f node_modules/.playwright-installed
-    cmd: pnpm run test:install && touch node_modules/.playwright-installed
+    cmd: npm run test:install && touch node_modules/.playwright-installed
 
   # ── Python CLI ───────────────────────────────────────────────────────────
 
@@ -86,14 +86,14 @@ tasks:
     deps: [.setup-webui]
     dir: "{{.WEBUI_DIR}}"
     cmds:
-      - pnpm run dev
+      - npm run dev
 
   webui-build:
     desc: Build the WebUI for production
     deps: [.setup-webui]
     dir: "{{.WEBUI_DIR}}"
     cmds:
-      - pnpm run build
+      - npm run build
 
   # ── Code quality ─────────────────────────────────────────────────────────
 
@@ -103,7 +103,7 @@ tasks:
     cmds:
       - uv run ruff check .
       - uv run ruff format --check .
-      - pnpm --dir {{.WEBUI_DIR}} run check
+      - npm --prefix {{.WEBUI_DIR}} run check
 
   lint-fix:
     desc: Lint and auto-fix Python code with ruff
@@ -136,7 +136,7 @@ tasks:
     deps: [.setup-python, .install-playwright]
     cmds:
       - uv run pytest --durations 3 --ff {{.CLI_ARGS}}
-      - pnpm --dir {{.WEBUI_DIR}} run test
+      - npm --prefix {{.WEBUI_DIR}} run test
 
   requirements:
     desc: Regenerate requirements.txt from uv.lock (for pip users)

@@ -21,20 +21,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - uses: pnpm/action-setup@v4
-        with:
-          version: latest
       - name: Install dependencies
         working-directory: webui
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: Install Playwright browsers
         working-directory: webui
-        run: pnpm run test:install
+        run: npm run test:install
 
       - name: Run tests
         working-directory: webui
-        run: pnpm test
+        run: npm test
 
       - uses: actions/upload-artifact@v4
         if: always()
