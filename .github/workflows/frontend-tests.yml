@@ -1,4 +1,4 @@
-name: WebUI Tests
+name: Frontend Tests
 
 on:
   pull_request:
@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 jobs:
-  test-webui:
+  test-frontend:
     runs-on: ubuntu-latest
 
     steps:
