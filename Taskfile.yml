@@ -156,5 +156,5 @@ tasks:
   # ── Compound ─────────────────────────────────────────────────────────────
 
   check:
-    desc: Lint, format-check, and test — Python + WebUI (CI equivalent)
-    deps: [lint, test-all]
+    desc: Lint, format-check, validate, and test — Python + WebUI (CI equivalent)
+    deps: [lint, validate, test-all]

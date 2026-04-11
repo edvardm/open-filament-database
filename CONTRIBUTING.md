@@ -24,6 +24,12 @@ task serve       # start OFD API server
 
 Run `task --list` for the full list.
 
+## Making a PR
+
+Run `task check` before opening a pull request — it covers lint, data validation, and all tests in one go.
+
+Keep each PR focused on a single logical change. Smaller, focused PRs are easier to review and less likely to conflict with concurrent work.
+
 ## Frontend development
 
 No need to install Task just to work on the frontend — npm scripts work directly:
