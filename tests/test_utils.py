@@ -58,18 +58,12 @@ def test_normalize_color_hex_unparseable_returned_as_is() -> None:
     assert utils.normalize_color_hex("not-a-color") == "not-a-color"
 
 
-def test_ensure_list_none_returns_empty() -> None:
-    assert utils.ensure_list(None) == []
-
-
 @pytest.mark.parametrize("value, expected", [
+    (None,       []),
     ("pla",      ["pla"]),
     (42,         [42]),
     ({"k": "v"}, [{"k": "v"}]),
+    (["a", "b"], ["a", "b"]),
 ])
-def test_ensure_list_scalar_wrapped(value: object, expected: list) -> None:
+def test_ensure_list(value: object, expected: list) -> None:
     assert utils.ensure_list(value) == expected
-
-
-def test_ensure_list_list_returned_unchanged() -> None:
-    assert utils.ensure_list(["a", "b"]) == ["a", "b"]
