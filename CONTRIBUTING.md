@@ -25,10 +25,20 @@ Run `task --list` for the full list.
 
 ## Pre-commit hooks (optional)
 
-Automatically fixes ruff lint and formatting issues on every commit. We recommend [prek](https://github.com/j178/prek) — a fast Rust-based drop-in replacement for `pre-commit` that uses the same `.pre-commit-config.yaml` format.
+We recommend [prek](https://github.com/j178/prek) — a fast Rust-based drop-in replacement for `pre-commit` that uses the same `.pre-commit-config.yaml` format. Notable adopters: Home Assistant, CPython, Apache Airflow, FastAPI, Ruff, vLLM (Apache Airflow reported 10x speedup over pre-commit).
 
 ```sh
 uv run prek install
+uv run prek install --hook-type commit-msg
 ```
 
-Notable projects that have adopted prek: Home Assistant, CPython, Apache Airflow, FastAPI, Ruff, vLLM. Apache Airflow reported a 10x speedup (18s vs 187s) over pre-commit.
+### Hooks included
+
+| Hook | Stage | What it does |
+|------|-------|--------------|
+| `end-of-file-fixer` | commit | Ensures files end with a newline |
+| `trailing-whitespace` | commit | Removes trailing whitespace |
+| `check-merge-conflict` | commit | Catches leftover conflict markers |
+| `ruff-check` | commit | Lints Python, auto-fixes where possible |
+| `ruff-format` | commit | Formats Python code |
+| `committed` | commit-msg | Enforces [Conventional Commits](https://www.conventionalcommits.org) format |
