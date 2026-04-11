@@ -113,6 +113,12 @@ tasks:
       - uv run ruff format .
 
   test:
+    desc: Run Python tests (pytest)
+    deps: [.setup-python]
+    cmds:
+      - uv run pytest --durations 3 --ff {{.CLI_ARGS}}
+
+  test-all:
     desc: Run all tests (Python + WebUI)
     deps: [.setup-python, .install-playwright]
     cmds:
@@ -138,4 +144,4 @@ tasks:
 
   check:
     desc: Lint, format-check, and test — Python + WebUI (CI equivalent)
-    deps: [lint, test]
+    deps: [lint, test-all]
