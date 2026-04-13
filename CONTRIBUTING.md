@@ -17,7 +17,8 @@ task setup   # installs Python deps (uv) + WebUI deps (npm)
 ## Common tasks
 
 ```sh
-task test        # pytest + Playwright E2E
+task test        # pytest
+task test-all    # pytest + Playwright E2E
 task lint        # ruff + svelte-check
 task serve       # start OFD API server
 ```
